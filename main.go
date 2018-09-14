@@ -163,30 +163,33 @@ func parseHostForCertFiles(pathS string) Certificates {
 				//fmt.Println(path)
 				dat, err := ioutil.ReadFile(path)
 				check(err)
-				if !strings.Contains(string(dat), ("-----BEGIN CERTIFICATE-----")) {
-					cert = b64.StdEncoding.EncodeToString(dat)
-					cert = insertNth(cert, 64)
-					cert = "-----BEGIN CERTIFICATE-----" + "\n" + cert + "\n" + "-----END CERTIFICATE-----"
-				} else {
-					cert = string(dat)
+				if !strings.Contains(string(dat), ("PRIVATE KEY")) {
+					if !strings.Contains(string(dat), ("-----BEGIN CERTIFICATE-----")) {
+						cert = b64.StdEncoding.EncodeToString(dat)
+						cert = insertNth(cert, 64)
+						cert = "-----BEGIN CERTIFICATE-----" + "\n" + cert + "\n" + "-----END CERTIFICATE-----"
+					} else {
+						cert = string(dat)
+					}
+
+					//fmt.Println(i)
+					//i = i + 1
+					//fmt.Println(certificates)
+					//certificate := Certificate{hostname: "Host", port: "Port", filename: f.Name(), path: path, certificate: cert, date: time.Now().Local().Format("2006-01-02"), probe: "locale"}
+					certificate := Certificate{GetHostName(), "", GetIPaddress(), f.Name(), path, cert, time.Now().Local().Format("2006-01-02"), "locale"}
+					/*var jsonBlob = []byte(`
+					{"hostname": "Host", port: "Port", "filename": f.Name(), "path": path, "certificate": cert}
+					`)*/
+					//certificate := Certificate{}
+					/*err = json.Unmarshal(jsonBlob, &certificate)
+					if err != nil {
+						// nozzle.printError("opening config file", err.Error())
+					}*/
+
+					//fmt.Println(certificate)
+
+					certificates = append(certificates, certificate)
 				}
-				//fmt.Println(i)
-				//i = i + 1
-				//fmt.Println(certificates)
-				//certificate := Certificate{hostname: "Host", port: "Port", filename: f.Name(), path: path, certificate: cert, date: time.Now().Local().Format("2006-01-02"), probe: "locale"}
-				certificate := Certificate{GetHostName(), "", GetIPaddress(), f.Name(), path, cert, time.Now().Local().Format("2006-01-02"), "locale"}
-				/*var jsonBlob = []byte(`
-				{"hostname": "Host", port: "Port", "filename": f.Name(), "path": path, "certificate": cert}
-				`)*/
-				//certificate := Certificate{}
-				/*err = json.Unmarshal(jsonBlob, &certificate)
-				if err != nil {
-					// nozzle.printError("opening config file", err.Error())
-				}*/
-
-				//fmt.Println(certificate)
-
-				certificates = append(certificates, certificate)
 			}
 			certificateJson, err := json.Marshal(certificates)
 			check(err)
