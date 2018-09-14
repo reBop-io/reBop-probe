@@ -11,3 +11,4 @@
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 rebop-local.code-workspace
+*-rebop.json

@@ -189,10 +189,9 @@ func parseHostForCertFiles(pathS string) Certificates {
 				certificates = append(certificates, certificate)
 			}
 			certificateJson, err := json.Marshal(certificates)
-			if err != nil {
-				fmt.Println(err)
-			}
-			err = ioutil.WriteFile("output.json", certificateJson, 0644)
+			check(err)
+			err = ioutil.WriteFile(time.Now().Local().Format("2006-01-02")+"-rebop.json", certificateJson, 0644)
+			check(err)
 		}
 		return nil
 	})
