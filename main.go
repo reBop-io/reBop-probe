@@ -177,7 +177,7 @@ func parseHostForCertFiles(pathS string) Certificates {
 					//fmt.Println(certificates)
 					//certificate := Certificate{hostname: "Host", port: "Port", filename: f.Name(), path: path, certificate: cert, date: time.Now().Local().Format("2006-01-02"), probe: "locale"}
 					// certificate := Certificate{GetHostName(), "", GetIPaddress(), f.Name(), path, cert, time.Now().Local().Format("2006-01-02"), "locale"}
-					certificate := Certificate{GetHostName(), "", GetIPaddress(), f.Name(), path, cert, time.Now().UTC().Format("2006-01-02T15:04:05z"), "locale"}
+					certificate := Certificate{GetHostName(), "", GetIPaddress(), f.Name(), path, cert, time.Now().UTC().Format("2006-01-02T15:04:05z"), "local"}
 					/*var jsonBlob = []byte(`
 					{"hostname": "Host", port: "Port", "filename": f.Name(), "path": path, "certificate": cert}
 					`)*/
