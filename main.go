@@ -69,7 +69,9 @@ func main() {
 
 func check(e error) {
 	if e != nil {
-		panic(e)
+		fmt.Println("Error loading file: ", e.Error())
+		//panic(e)
+		os.Exit(1)
 	}
 }
 
@@ -163,7 +165,7 @@ func parseHostForCertFiles(pathS string) Certificates {
 				//fmt.Println(path)
 				dat, err := ioutil.ReadFile(path)
 				check(err)
-				if !strings.Contains(string(dat), ("PRIVATE KEY")) {
+				if !strings.Contains(string(dat), ("PRIVATE KEY")) || !strings.Contains(string(dat), ("PUBLIC KEY")) {
 					if !strings.Contains(string(dat), ("-----BEGIN CERTIFICATE-----")) {
 						cert = b64.StdEncoding.EncodeToString(dat)
 						cert = insertNth(cert, 64)
