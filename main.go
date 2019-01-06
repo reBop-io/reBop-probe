@@ -157,6 +157,8 @@ func parseHostForCertFiles(pathS string) Certificates {
 	ext := []string{".cer", ".cert", ".pem", ".der", ".crt"}
 	filepath.Walk(pathS, func(path string, f os.FileInfo, _ error) error {
 		var cert string
+		var hostname = GetHostName()
+		var ipaddress []string = GetIPaddress()
 		//fmt.Println(stringInSlice("toto.cer", ext))
 
 		if !f.IsDir() {
@@ -165,38 +167,40 @@ func parseHostForCertFiles(pathS string) Certificates {
 				//fmt.Println(path)
 				dat, err := ioutil.ReadFile(path)
 				check(err)
-				if !strings.Contains(string(dat), ("PRIVATE KEY")) || !strings.Contains(string(dat), ("PUBLIC KEY")) {
-					if !strings.Contains(string(dat), ("-----BEGIN CERTIFICATE-----")) {
-						cert = b64.StdEncoding.EncodeToString(dat)
-						cert = insertNth(cert, 64)
-						cert = "-----BEGIN CERTIFICATE-----" + "\n" + cert + "\n" + "-----END CERTIFICATE-----"
-					} else {
-						cert = string(dat)
+				if cap(dat) > 0 {
+					if !strings.Contains(string(dat), ("PRIVATE KEY")) || !strings.Contains(string(dat), ("PUBLIC KEY")) {
+						if !strings.Contains(string(dat), ("-----BEGIN CERTIFICATE-----")) {
+							cert = b64.StdEncoding.EncodeToString(dat)
+							cert = insertNth(cert, 64)
+							cert = "-----BEGIN CERTIFICATE-----" + "\n" + cert + "\n" + "-----END CERTIFICATE-----"
+						} else {
+							cert = string(dat)
+						}
+
+						//fmt.Println(i)
+						//i = i + 1
+						//fmt.Println(certificates)
+						//certificate := Certificate{hostname: "Host", port: "Port", filename: f.Name(), path: path, certificate: cert, date: time.Now().Local().Format("2006-01-02"), probe: "locale"}
+						// certificate := Certificate{GetHostName(), "", GetIPaddress(), f.Name(), path, cert, time.Now().Local().Format("2006-01-02"), "locale"}
+						certificate := Certificate{hostname, "", ipaddress, f.Name(), path, cert, time.Now().UTC().Format("2006-01-02T15:04:05z"), "local"}
+						/*var jsonBlob = []byte(`
+						{"hostname": "Host", port: "Port", "filename": f.Name(), "path": path, "certificate": cert}
+						`)*/
+						//certificate := Certificate{}
+						/*err = json.Unmarshal(jsonBlob, &certificate)
+						if err != nil {
+							// nozzle.printError("opening config file", err.Error())
+						}*/
+
+						//fmt.Println(certificate)
+
+						certificates = append(certificates, certificate)
 					}
-
-					//fmt.Println(i)
-					//i = i + 1
-					//fmt.Println(certificates)
-					//certificate := Certificate{hostname: "Host", port: "Port", filename: f.Name(), path: path, certificate: cert, date: time.Now().Local().Format("2006-01-02"), probe: "locale"}
-					// certificate := Certificate{GetHostName(), "", GetIPaddress(), f.Name(), path, cert, time.Now().Local().Format("2006-01-02"), "locale"}
-					certificate := Certificate{GetHostName(), "", GetIPaddress(), f.Name(), path, cert, time.Now().UTC().Format("2006-01-02T15:04:05z"), "local"}
-					/*var jsonBlob = []byte(`
-					{"hostname": "Host", port: "Port", "filename": f.Name(), "path": path, "certificate": cert}
-					`)*/
-					//certificate := Certificate{}
-					/*err = json.Unmarshal(jsonBlob, &certificate)
-					if err != nil {
-						// nozzle.printError("opening config file", err.Error())
-					}*/
-
-					//fmt.Println(certificate)
-
-					certificates = append(certificates, certificate)
 				}
 			}
 			certificateJson, err := json.Marshal(certificates)
 			check(err)
-			err = ioutil.WriteFile(time.Now().Local().Format("2006-01-02")+"-rebop.json", certificateJson, 0644)
+			err = ioutil.WriteFile(time.Now().Local().Format("2006-01-02")+"-"+hostname+"-rebop.json", certificateJson, 0644)
 			check(err)
 		}
 		return nil
