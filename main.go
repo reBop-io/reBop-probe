@@ -149,7 +149,7 @@ func stringInSlice(str string, list []string) bool {
 	return false
 }
 
-func parseHostForCertFiles(pathS string) Certificates {
+func parseHostForCertFiles(pathS string) {
 	var certificates Certificates
 	//var pathS string = "/Users/nicocha/Projects/"
 	//var data string
@@ -168,34 +168,32 @@ func parseHostForCertFiles(pathS string) Certificates {
 				dat, err := ioutil.ReadFile(path)
 				check(err)
 				if cap(dat) > 0 {
-					if !strings.Contains(string(dat), ("PRIVATE KEY")) || !strings.Contains(string(dat), ("PUBLIC KEY")) {
-						if !strings.Contains(string(dat), ("-----BEGIN CERTIFICATE-----")) {
-							cert = b64.StdEncoding.EncodeToString(dat)
-							cert = insertNth(cert, 64)
-							cert = "-----BEGIN CERTIFICATE-----" + "\n" + cert + "\n" + "-----END CERTIFICATE-----"
-						} else {
-							cert = string(dat)
-						}
-
-						//fmt.Println(i)
-						//i = i + 1
-						//fmt.Println(certificates)
-						//certificate := Certificate{hostname: "Host", port: "Port", filename: f.Name(), path: path, certificate: cert, date: time.Now().Local().Format("2006-01-02"), probe: "locale"}
-						// certificate := Certificate{GetHostName(), "", GetIPaddress(), f.Name(), path, cert, time.Now().Local().Format("2006-01-02"), "locale"}
-						certificate := Certificate{hostname, "", ipaddress, f.Name(), path, cert, time.Now().UTC().Format("2006-01-02T15:04:05z"), "local"}
-						/*var jsonBlob = []byte(`
-						{"hostname": "Host", port: "Port", "filename": f.Name(), "path": path, "certificate": cert}
-						`)*/
-						//certificate := Certificate{}
-						/*err = json.Unmarshal(jsonBlob, &certificate)
-						if err != nil {
-							// nozzle.printError("opening config file", err.Error())
-						}*/
-
-						//fmt.Println(certificate)
-
-						certificates = append(certificates, certificate)
+					if !strings.Contains(string(dat), ("PRIVATE KEY")) && !strings.Contains(string(dat), ("PUBLIC KEY")) && !strings.Contains(string(dat), ("-----BEGIN CERTIFICATE-----")) {
+						cert = b64.StdEncoding.EncodeToString(dat)
+						cert = insertNth(cert, 64)
+						cert = "-----BEGIN CERTIFICATE-----" + "\n" + cert + "\n" + "-----END CERTIFICATE-----"
+					} else {
+						cert = string(dat)
 					}
+
+					//fmt.Println(i)
+					//i = i + 1
+					//fmt.Println(certificates)
+					//certificate := Certificate{hostname: "Host", port: "Port", filename: f.Name(), path: path, certificate: cert, date: time.Now().Local().Format("2006-01-02"), probe: "locale"}
+					// certificate := Certificate{GetHostName(), "", GetIPaddress(), f.Name(), path, cert, time.Now().Local().Format("2006-01-02"), "locale"}
+					certificate := Certificate{hostname, "", ipaddress, f.Name(), path, cert, time.Now().UTC().Format("2006-01-02T15:04:05z"), "local"}
+					/*var jsonBlob = []byte(`
+					{"hostname": "Host", port: "Port", "filename": f.Name(), "path": path, "certificate": cert}
+					`)*/
+					//certificate := Certificate{}
+					/*err = json.Unmarshal(jsonBlob, &certificate)
+					if err != nil {
+						// nozzle.printError("opening config file", err.Error())
+					}*/
+
+					//fmt.Println(certificate)
+
+					certificates = append(certificates, certificate)
 				}
 			}
 			certificateJson, err := json.Marshal(certificates)
@@ -205,5 +203,5 @@ func parseHostForCertFiles(pathS string) Certificates {
 		}
 		return nil
 	})
-	return certificates
+	//return certificates
 }
