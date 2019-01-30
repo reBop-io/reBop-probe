@@ -2,8 +2,10 @@ package main
 
 import (
 	"bytes"
-	b64 "encoding/base64"
+	"crypto/x509"
+	"encoding/base64"
 	"encoding/json"
+	"encoding/pem"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -41,7 +43,7 @@ func main() {
 
 	flag.Usage = func() {
 		fmt.Printf("Usage of %s:\n", os.Args[0])
-		fmt.Printf("    rebop-local <path>\n")
+		fmt.Printf("	rebop-local <path>\n")
 		flag.PrintDefaults()
 	}
 
@@ -54,9 +56,11 @@ func main() {
 		flag.Usage()
 		os.Exit(1)
 	}
+	var path, err = filepath.Abs(os.Args[1])
+	check(err)
 
 	//var cert Certificates
-	parseHostForCertFiles(os.Args[1])
+	parseHostForCertFiles(path)
 	//fmt.Println(cert)
 	/*var data, err = json.Marshal(cert)
 	if err != nil {
@@ -64,7 +68,6 @@ func main() {
 	}*/
 	//fmt.Printf("%s\n", data)
 	//fmt.Println(cert)
-
 }
 
 func check(e error) {
@@ -77,11 +80,11 @@ func check(e error) {
 
 func insertNth(s string, n int) string {
 	var buffer bytes.Buffer
-	var n_1 = n - 1
-	var l_1 = len(s) - 1
+	var n1 = n - 1
+	var l1 = len(s) - 1
 	for i, rune := range s {
 		buffer.WriteRune(rune)
-		if i%n == n_1 && i != l_1 {
+		if i%n == n1 && i != l1 {
 			buffer.WriteRune('\n')
 		}
 	}
@@ -92,7 +95,7 @@ func GetHostInfos() []string {
 	var hostinfos []string
 
 	var hostname, err = os.Hostname()
-	fmt.Println(hostname)
+	//fmt.Println(hostname)
 	if err != nil {
 		hostname = "unknown"
 	}
@@ -169,31 +172,43 @@ func parseHostForCertFiles(pathS string) {
 				check(err)
 				if cap(dat) > 0 {
 					if !strings.Contains(string(dat), ("PRIVATE KEY")) && !strings.Contains(string(dat), ("PUBLIC KEY")) && !strings.Contains(string(dat), ("-----BEGIN CERTIFICATE-----")) {
-						cert = b64.StdEncoding.EncodeToString(dat)
+						cert = base64.StdEncoding.EncodeToString(dat)
 						cert = insertNth(cert, 64)
 						cert = "-----BEGIN CERTIFICATE-----" + "\n" + cert + "\n" + "-----END CERTIFICATE-----"
 					} else {
 						cert = string(dat)
+						block, _ := pem.Decode([]byte(cert))
+						if block == nil {
+							fmt.Println("failed to parse PEM file: ", cert)
+						} else {
+							_, err := x509.ParseCertificate(block.Bytes)
+							if err != nil {
+								fmt.Println("failed to parse certificate: ", err.Error())
+							} else {
+
+								//fmt.Println(decodedcert.AuthorityKeyId)
+
+								//i = i + 1
+								//fmt.Println(certificates)
+								//certificate := Certificate{hostname: "Host", port: "Port", filename: f.Name(), path: path, certificate: cert, date: time.Now().Local().Format("2006-01-02"), probe: "locale"}
+								// certificate := Certificate{GetHostName(), "", GetIPaddress(), f.Name(), path, cert, time.Now().Local().Format("2006-01-02"), "locale"}
+								certificate := Certificate{hostname, "", ipaddress, f.Name(), path, cert, time.Now().UTC().Format("2006-01-02T15:04:05z"), "local"}
+								/*var jsonBlob = []byte(`
+								{"hostname": "Host", port: "Port", "filename": f.Name(), "path": path, "certificate": cert}
+								`)*/
+								//certificate := Certificate{}
+								/*err = json.Unmarshal(jsonBlob, &certificate)
+								if err != nil {
+									// nozzle.printError("opening config file", err.Error())
+								}*/
+
+								//fmt.Println(certificate)
+
+								certificates = append(certificates, certificate)
+							}
+						}
 					}
 
-					//fmt.Println(i)
-					//i = i + 1
-					//fmt.Println(certificates)
-					//certificate := Certificate{hostname: "Host", port: "Port", filename: f.Name(), path: path, certificate: cert, date: time.Now().Local().Format("2006-01-02"), probe: "locale"}
-					// certificate := Certificate{GetHostName(), "", GetIPaddress(), f.Name(), path, cert, time.Now().Local().Format("2006-01-02"), "locale"}
-					certificate := Certificate{hostname, "", ipaddress, f.Name(), path, cert, time.Now().UTC().Format("2006-01-02T15:04:05z"), "local"}
-					/*var jsonBlob = []byte(`
-					{"hostname": "Host", port: "Port", "filename": f.Name(), "path": path, "certificate": cert}
-					`)*/
-					//certificate := Certificate{}
-					/*err = json.Unmarshal(jsonBlob, &certificate)
-					if err != nil {
-						// nozzle.printError("opening config file", err.Error())
-					}*/
-
-					//fmt.Println(certificate)
-
-					certificates = append(certificates, certificate)
 				}
 			}
 			certificateJson, err := json.Marshal(certificates)

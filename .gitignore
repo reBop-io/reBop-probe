@@ -12,3 +12,6 @@
 *.out
 rebop-local.code-workspace
 *-rebop.json
+.DS_Store
+gogrep.go
+rebop-local
