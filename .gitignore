@@ -15,4 +15,8 @@ rebop-local.code-workspace
 .DS_Store
 gogrep.go
 rebop-local
+rebop-local-linux
+rebop-local-mac
+rebop-local-win
 main.o
+
