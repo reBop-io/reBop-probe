@@ -1,4 +1,4 @@
-package main
+package main // import "github.com/nicocha/rebop-local"
 
 import (
 	"bytes"
@@ -6,16 +6,22 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"encoding/pem"
+	"errors"
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/urfave/cli"
 )
+
+//const ServiceName = "rebop-agent"
 
 var ext = []string{".cer", ".cert", ".pem", ".der", ".crt"}
 
@@ -47,6 +53,110 @@ type certificate struct {
 type certificates []certificate
 
 func main() {
+	app := cli.NewApp()
+	app.Name = "rebop-agent"
+	app.Version = "0.1.0"
+	// Possible command for rebop-agent are
+	// scan : scans localhost for certificate
+	// send : send local rebop file to remote rebop server
+	// reset : reset local database
+	app.Usage = "scan your filesystem for certificate and encrypt them into one file"
+	app.Commands = []cli.Command{
+		{
+			Name: "scan",
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "path, p",
+					Usage: "path to scan",
+				},
+				cli.StringFlag{
+					Name:  "out, o",
+					Usage: "output file path",
+				},
+			},
+			Action: func(c *cli.Context) error {
+				if c.NArg() < 2 {
+					return errors.New("usage: scan '<path>' '<out>'")
+				}
+				path := c.Args()[0]
+				outpath := c.Args()[1]
+				fmt.Print((outpath))
+
+				if _, err := os.Stat(path); os.IsNotExist(err) {
+					log.Println("Couldn't open %s", path)
+					return nil
+				}
+				//else {
+				var rootPath, err = filepath.Abs(os.Args[1])
+				if err != nil {
+					fmt.Errorf(err.Error())
+					return nil
+				}
+
+				var wg sync.WaitGroup
+
+				paths := make(chan fsEntry, 1)
+				errs := make(chan error, 1)
+				certs := make(chan *certificate, 1)
+				done := make(chan bool, 1)
+
+				wg.Add(1)
+				go parseHostForCertFiles(rootPath, paths, errs, &wg)
+				go worker(paths, errs, certs, &wg)
+				go func() {
+					wg.Wait()
+					done <- true
+				}()
+
+				certificates := make(certificates, 0)
+
+				for {
+					select {
+					case <-done:
+						mutex.Lock()
+						fmt.Println("Done in:", time.Since(start), "\nParsed", parsedCount, "files\nSaved", len(certificates), "out of", validCount, "certificates")
+						mutex.Unlock()
+
+						certificateJSON, err := json.Marshal(certificates)
+						if err != nil {
+							fmt.Errorf(err.Error())
+							os.Exit(1)
+						}
+						err = ioutil.WriteFile(
+							time.Now().Local().Format("2006-01-02")+"-"+hostname+"-rebop.json",
+							certificateJSON,
+							0644)
+						if err != nil {
+							fmt.Errorf(err.Error())
+							os.Exit(1)
+						}
+						return nil
+					case cert := <-certs:
+						certificates = append(certificates, *cert)
+					case err := <-errs:
+						fmt.Println("err:", err)
+					}
+				}
+				//}
+			},
+		},
+		{
+			Name: "send",
+			Action: func(c *cli.Context) error {
+				if c.NArg() < 1 {
+					return errors.New("usage: send <name>")
+				}
+				log.Println("in send")
+				return nil
+			},
+		},
+	}
+	if err := app.Run(os.Args); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func main2() {
 	flag.Usage = func() {
 		fmt.Printf("Usage of %s:\n", os.Args[0])
 		fmt.Printf("\t./rebop-local <path>\n")
@@ -61,56 +171,6 @@ func main() {
 		fmt.Printf("Couldn't open %s\n", os.Args[1])
 		flag.Usage()
 		os.Exit(1)
-	}
-	var rootPath, err = filepath.Abs(os.Args[1])
-	if err != nil {
-		fmt.Errorf(err.Error())
-		os.Exit(1)
-	}
-
-	var wg sync.WaitGroup
-
-	paths := make(chan fsEntry, 1)
-	errs := make(chan error, 1)
-	certs := make(chan *certificate, 1)
-	done := make(chan bool, 1)
-
-	wg.Add(1)
-	go parseHostForCertFiles(rootPath, paths, errs, &wg)
-	go worker(paths, errs, certs, &wg)
-	go func() {
-		wg.Wait()
-		done <- true
-	}()
-
-	certificates := make(certificates, 0)
-
-	for {
-		select {
-		case <-done:
-			mutex.Lock()
-			fmt.Println("Done in:", time.Since(start), "\nParsed", parsedCount, "files\nSaved", len(certificates), "out of", validCount, "certificates")
-			mutex.Unlock()
-
-			certificateJSON, err := json.Marshal(certificates)
-			if err != nil {
-				fmt.Errorf(err.Error())
-				os.Exit(1)
-			}
-			err = ioutil.WriteFile(
-				time.Now().Local().Format("2006-01-02")+"-"+hostname+"-rebop.json",
-				certificateJSON,
-				0644)
-			if err != nil {
-				fmt.Errorf(err.Error())
-				os.Exit(1)
-			}
-			return
-		case cert := <-certs:
-			certificates = append(certificates, *cert)
-		case err := <-errs:
-			fmt.Println("err:", err)
-		}
 	}
 }
 
@@ -159,7 +219,6 @@ func gethostinfos() []string {
 
 func gethostname() string {
 	var hostname, err = os.Hostname()
-
 	if err != nil {
 		hostname = "unknown"
 	}
@@ -250,6 +309,7 @@ func once(entry fsEntry) (*certificate, error) {
 	var cert string
 
 	// todo: give the task to a worker pool
+	fmt.Println(filepath.Ext(entry.path))
 	if stringInSlice(filepath.Ext(entry.path), ext) {
 		mutex.Lock()
 		parsedCount++
@@ -259,22 +319,26 @@ func once(entry fsEntry) (*certificate, error) {
 		if err != nil {
 			return nil, err
 		}
+		//fmt.Println(filepath.Ext(entry.path))
 		if cap(dat) > 0 {
+			fmt.Println("CAP")
 			if !strings.Contains(string(dat), ("PRIVATE KEY")) && !strings.Contains(string(dat), ("PUBLIC KEY")) && !strings.Contains(string(dat), ("-----BEGIN CERTIFICATE-----")) {
 				cert = base64.StdEncoding.EncodeToString(dat)
 				cert = insertNth(cert, 64)
 				cert = "-----BEGIN CERTIFICATE-----" + "\n" + cert + "\n" + "-----END CERTIFICATE-----"
 			} else {
+				fmt.Println("ELSE")
 				cert = string(dat)
 				block, _ := pem.Decode([]byte(cert))
 				if block == nil {
 					fmt.Println("failed to parse PEM file: %v", entry.path)
 				} else {
+					//fmt.Println(block.Bytes)
 					_, err := x509.ParseCertificate(block.Bytes)
 					if err != nil {
 						return nil, fmt.Errorf(err.Error(), entry.path)
 					}
-
+					fmt.Println("AFTER RETURN")
 					certificate := certificate{
 						hostname,
 						"",
@@ -285,7 +349,6 @@ func once(entry fsEntry) (*certificate, error) {
 						time.Now().UTC().Format("2006-01-02T15:04:05z"),
 						"local",
 					}
-
 					mutex.Lock()
 					validCount++
 					mutex.Unlock()
