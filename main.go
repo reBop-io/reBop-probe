@@ -7,7 +7,9 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"errors"
-	"flag"
+
+	//	"flag"
+	"compress/gzip"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -21,7 +23,7 @@ import (
 	"github.com/urfave/cli"
 )
 
-//const ServiceName = "rebop-agent"
+const ServiceName = "rebop-agent"
 
 var ext = []string{".cer", ".cert", ".pem", ".der", ".crt"}
 
@@ -60,7 +62,7 @@ func main() {
 	// scan : scans localhost for certificate
 	// send : send local rebop file to remote rebop server
 	// reset : reset local database
-	app.Usage = "scan your filesystem for certificate and encrypt them into one file"
+	app.Usage = "scan your filesystem for certificates and encrypt them into one file"
 	app.Commands = []cli.Command{
 		{
 			Name: "scan",
@@ -71,28 +73,28 @@ func main() {
 				},
 				cli.StringFlag{
 					Name:  "out, o",
-					Usage: "output file path",
+					Usage: "output file",
 				},
 			},
 			Action: func(c *cli.Context) error {
 				if c.NArg() < 2 {
-					return errors.New("usage: scan '<path>' '<out>'")
+					return errors.New("usage: scan '<path>' '<output file>'")
 				}
-				path := c.Args()[0]
-				outpath := c.Args()[1]
-				fmt.Print((outpath))
+				rootPath := c.Args()[0]
+				outfile := c.Args()[1]
 
-				if _, err := os.Stat(path); os.IsNotExist(err) {
-					log.Println("Couldn't open %s", path)
+				if _, err := os.Stat(rootPath); os.IsNotExist(err) {
+					log.Println("Couldn't open %s", rootPath)
 					return nil
 				}
 				//else {
-				var rootPath, err = filepath.Abs(os.Args[1])
-				if err != nil {
-					fmt.Errorf(err.Error())
-					return nil
-				}
-
+				/*
+					var rootPath, err = filepath.Abs(os.Args[1])
+					if err != nil {
+						fmt.Errorf(err.Error())
+						return nil
+					}
+				*/
 				var wg sync.WaitGroup
 
 				paths := make(chan fsEntry, 1)
@@ -122,19 +124,48 @@ func main() {
 							fmt.Errorf(err.Error())
 							os.Exit(1)
 						}
-						err = ioutil.WriteFile(
-							time.Now().Local().Format("2006-01-02")+"-"+hostname+"-rebop.json",
-							certificateJSON,
-							0644)
+
+						var filename = outfile + "-rebop-" + time.Now().Local().Format("2006-01-02") + ".gz"
+						// Open the gzip file.
+						f, _ := os.Create(filename)
+						//var buf bytes.Buffer
+						//zw := gzip.NewWriter(&buf)
+						zw := gzip.NewWriter(f)
+
+						// Setting the Header fields is optional.
+						zw.Name = filename
+						zw.Comment = "Rebop file"
+						zw.ModTime = time.Date(1977, time.May, 25, 0, 0, 0, 0, time.UTC)
+
+						//test, err := zw.Write([]byte(certificateJSON))
+						_, err = zw.Write([]byte(certificateJSON))
 						if err != nil {
-							fmt.Errorf(err.Error())
-							os.Exit(1)
+							//log.Println(err)
+							log.Fatal(err)
 						}
+						if err := zw.Close(); err != nil {
+							//log.Println(err)
+							log.Fatal(err)
+						}
+
+						fmt.Printf("Name: %s\nComment: %s\nModTime: %s\n\n", zw.Name, zw.Comment, zw.ModTime.UTC())
+
+						/*
+							err = ioutil.WriteFile(
+								outfile+"-rebop-"+time.Now().Local().Format("2006-01-02")+".json",
+								//time.Now().Local().Format("2006-01-02")+"-"+hostname+"-rebop.json",
+								certificateJSON,
+								0644)
+							if err != nil {
+								fmt.Errorf(err.Error())
+								os.Exit(1)
+							}
+						*/
 						return nil
 					case cert := <-certs:
 						certificates = append(certificates, *cert)
 					case err := <-errs:
-						fmt.Println("err:", err)
+						fmt.Println("error: ", err)
 					}
 				}
 				//}
@@ -153,24 +184,6 @@ func main() {
 	}
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
-	}
-}
-
-func main2() {
-	flag.Usage = func() {
-		fmt.Printf("Usage of %s:\n", os.Args[0])
-		fmt.Printf("\t./rebop-local <path>\n")
-		flag.PrintDefaults()
-	}
-
-	flag.Parse()
-	if flag.NArg() == 0 {
-		flag.Usage()
-		os.Exit(1)
-	} else if _, err := os.Stat(os.Args[1]); os.IsNotExist(err) {
-		fmt.Printf("Couldn't open %s\n", os.Args[1])
-		flag.Usage()
-		os.Exit(1)
 	}
 }
 
@@ -309,7 +322,7 @@ func once(entry fsEntry) (*certificate, error) {
 	var cert string
 
 	// todo: give the task to a worker pool
-	fmt.Println(filepath.Ext(entry.path))
+	//fmt.Println(filepath.Ext(entry.path))
 	if stringInSlice(filepath.Ext(entry.path), ext) {
 		mutex.Lock()
 		parsedCount++
@@ -321,24 +334,28 @@ func once(entry fsEntry) (*certificate, error) {
 		}
 		//fmt.Println(filepath.Ext(entry.path))
 		if cap(dat) > 0 {
-			fmt.Println("CAP")
+			//fmt.Println("CAP")
 			if !strings.Contains(string(dat), ("PRIVATE KEY")) && !strings.Contains(string(dat), ("PUBLIC KEY")) && !strings.Contains(string(dat), ("-----BEGIN CERTIFICATE-----")) {
 				cert = base64.StdEncoding.EncodeToString(dat)
 				cert = insertNth(cert, 64)
 				cert = "-----BEGIN CERTIFICATE-----" + "\n" + cert + "\n" + "-----END CERTIFICATE-----"
 			} else {
-				fmt.Println("ELSE")
+				//fmt.Println("ELSE")
 				cert = string(dat)
 				block, _ := pem.Decode([]byte(cert))
 				if block == nil {
-					fmt.Println("failed to parse PEM file: %v", entry.path)
+					fmt.Println("failed to parse PEM file: ", entry.path)
 				} else {
 					//fmt.Println(block.Bytes)
 					_, err := x509.ParseCertificate(block.Bytes)
 					if err != nil {
-						return nil, fmt.Errorf(err.Error(), entry.path)
+						if strings.Contains(err.Error(), "named curve") {
+							fmt.Println(err.Error())
+						} else {
+							return nil, fmt.Errorf(err.Error(), entry.path)
+						}
 					}
-					fmt.Println("AFTER RETURN")
+					//fmt.Println("AFTER RETURN")
 					certificate := certificate{
 						hostname,
 						"",
