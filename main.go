@@ -90,11 +90,22 @@ func main() {
 		},
 		{
 			Name: "send",
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "path, p",
+					Usage: "path to scan",
+				},
+			},
 			Action: func(c *cli.Context) error {
 				if c.NArg() < 1 {
 					return errors.New("usage: send <name>")
 				}
-				log.Println("in send")
+				certArray, err := rebopScan((c.Args()[0]))
+				if err != nil {
+					//log.Println(err)
+					log.Fatal(err)
+				}
+				rebopSend(certArray, "test.json")
 				return nil
 			},
 		},
