@@ -1,4 +1,4 @@
-package rebopagent // import "github.com/nicocha/rebopagent"
+package main // import "github.com/nicocha/rebopagent"
 
 import (
 	"bytes"
@@ -22,7 +22,7 @@ import (
 	"github.com/urfave/cli"
 )
 
-const ServiceName = "rebop-agent"
+const ServiceName = "rebopagent"
 
 var ext = []string{".cer", ".cert", ".pem", ".der", ".crt"}
 
@@ -55,7 +55,7 @@ type certificates []certificate
 
 func main() {
 	app := cli.NewApp()
-	app.Name = "rebop-agent"
+	app.Name = "rebopagent"
 	app.Version = "0.1.0"
 	// Possible command for rebop-agent are
 	// scan : scans localhost for certificate
@@ -79,7 +79,12 @@ func main() {
 				if c.NArg() < 2 {
 					return errors.New("usage: scan '<path>' '<output file>'")
 				}
-				rebopScan(c.Args()[0], c.Args()[1])
+				certArray, err := rebopScan((c.Args()[0]))
+				if err != nil {
+					//log.Println(err)
+					log.Fatal(err)
+				}
+				rebopStore(certArray, c.Args()[1])
 				return nil
 			},
 		},

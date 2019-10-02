@@ -1,7 +1,6 @@
-package rebopagent
+package main
 
 import (
-	"compress/gzip"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -10,10 +9,10 @@ import (
 	"time"
 )
 
-func rebopScan(rootPath string, outfile string) error {
+func rebopScan(rootPath string) ([]byte, error) {
 	if _, err := os.Stat(rootPath); os.IsNotExist(err) {
 		log.Println("Couldn't open %s", rootPath)
-		return nil
+		return nil, nil
 	}
 	//else {
 	/*
@@ -52,44 +51,8 @@ func rebopScan(rootPath string, outfile string) error {
 				fmt.Errorf(err.Error())
 				os.Exit(1)
 			}
-
-			var filename = outfile + "-rebop-" + time.Now().Local().Format("2006-01-02") + ".gz"
-			// Open the gzip file.
-			f, _ := os.Create(filename)
-			//var buf bytes.Buffer
-			//zw := gzip.NewWriter(&buf)
-			zw := gzip.NewWriter(f)
-
-			// Setting the Header fields is optional.
-			//zw.Name = filename
-			//zw.Comment = "Rebop file"
-			//zw.ModTime = time.Date(1977, time.May, 25, 0, 0, 0, 0, time.UTC)
-
-			//test, err := zw.Write([]byte(certificateJSON))
-			_, err = zw.Write([]byte(certificateJSON))
-			if err != nil {
-				//log.Println(err)
-				log.Fatal(err)
-			}
-			if err := zw.Close(); err != nil {
-				//log.Println(err)
-				log.Fatal(err)
-			}
-
 			//fmt.Printf("Name: %s\nComment: %s\nModTime: %s\n\n", zw.Name, zw.Comment, zw.ModTime.UTC())
-
-			/*
-				err = ioutil.WriteFile(
-					outfile+"-rebop-"+time.Now().Local().Format("2006-01-02")+".json",
-					//time.Now().Local().Format("2006-01-02")+"-"+hostname+"-rebop.json",
-					certificateJSON,
-					0644)
-				if err != nil {
-					fmt.Errorf(err.Error())
-					os.Exit(1)
-				}
-			*/
-			return nil
+			return certificateJSON, nil
 		case cert := <-certs:
 			certificates = append(certificates, *cert)
 		case err := <-errs:

@@ -12,6 +12,7 @@
 *.out
 rebop-local.code-workspace
 *-rebop.json
+*-rebop*.gz
 .DS_Store
 gogrep.go
 rebop-local
@@ -22,3 +23,4 @@ main.o
 
 go.sum
 rebop
+rebopagent
