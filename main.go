@@ -1,15 +1,14 @@
-package rebopAgent // import "github.com/nicocha/rebopAgent"
+package rebopagent // import "github.com/nicocha/rebopagent"
 
 import (
 	"bytes"
 	"crypto/x509"
 	"encoding/base64"
-	"encoding/json"
 	"encoding/pem"
 	"errors"
 
 	//	"flag"
-	"compress/gzip"
+
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -56,13 +55,13 @@ type certificates []certificate
 
 func main() {
 	app := cli.NewApp()
-	app.Name = "rebop"
+	app.Name = "rebop-agent"
 	app.Version = "0.1.0"
 	// Possible command for rebop-agent are
-	// scan : scans localhost for certificate and save them locally
-	// send : scan & send certificate ile to remote rebop server
+	// scan : scans localhost for certificate
+	// send : send local rebop file to remote rebop server
 	// reset : reset local database
-	app.Usage = "Ccan your filesystem for certificates and either send them to rebop or save them locally"
+	app.Usage = "scan your filesystem for certificates and encrypt them into one file"
 	app.Commands = []cli.Command{
 		{
 			Name: "scan",
@@ -80,7 +79,9 @@ func main() {
 				if c.NArg() < 2 {
 					return errors.New("usage: scan '<path>' '<output file>'")
 				}
-				rebopfile = scan(c.Args()[0], c.Args()[1])
+				rebopScan(c.Args()[0], c.Args()[1])
+				return nil
+			},
 		},
 		{
 			Name: "send",
@@ -233,7 +234,7 @@ func once(entry fsEntry) (*certificate, error) {
 	var cert string
 
 	// todo: give the task to a worker pool
-	fmt.Println(filepath.Ext(entry.path))
+	//fmt.Println(filepath.Ext(entry.path))
 	if stringInSlice(filepath.Ext(entry.path), ext) {
 		mutex.Lock()
 		parsedCount++

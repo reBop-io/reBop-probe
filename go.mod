@@ -1,4 +1,4 @@
-module github.com/nicocha/rebopAgent
+module github.com/nicocha/rebopagent
 
 go 1.12
 
