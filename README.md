@@ -1,4 +1,4 @@
-# rebop-local
+# rebopAgent
 
 Main repo for Rebop local probe for certificates.
 ```

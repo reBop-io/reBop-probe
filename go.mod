@@ -1,4 +1,4 @@
-module github.com/nicocha/rebop-local
+module github.com/nicocha/rebopAgent
 
 go 1.12
 
