@@ -18,14 +18,14 @@ func check(e error) {
 }
 
 // RandomString ... "Return a random string of n character"
-func RandomString(n int) string {
+func rebopRandomString(n int) string {
 	var letter = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
 
 	b := make([]rune, n)
 	for i := range b {
 		b[i] = letter[rand.Intn(len(letter))]
 	}
-	return string(b)
+	return "rebop-" + string(b)
 }
 
 func gethostname() string {

@@ -96,7 +96,7 @@ func main() {
 					log.Fatal(err)
 				}
 				if lengh > 0 {
-					err = rebopSend(certArray, RandomString(5), cfg)
+					err = rebopSend(certArray, rebopRandomString(5), cfg)
 					if err != nil {
 						log.Fatal(err)
 					}
