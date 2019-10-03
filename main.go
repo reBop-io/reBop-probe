@@ -64,16 +64,18 @@ func main() {
 				if c.NArg() < 2 {
 					return errors.New("usage: scan '<path>' '<output file>'")
 				}
-				certArray, err := rebopScan((c.Args()[0]))
+				length, certArray, err := rebopScan((c.Args()[0]))
 				if err != nil {
 					//log.Println(err)
 					log.Fatal(err)
 				}
-				f, err := rebopStore(certArray, c.Args()[1])
-				if err != nil {
-					log.Fatal(err)
+				if length > 0 {
+					f, err := rebopStore(certArray, c.Args()[1])
+					if err != nil {
+						log.Fatal(err)
+					}
+					fmt.Println("reBop file created: ", f)
 				}
-				fmt.Println("reBop file created: ", f)
 				return nil
 			},
 		},
@@ -89,16 +91,17 @@ func main() {
 				if c.NArg() < 1 {
 					return errors.New("usage: send <name>")
 				}
-				certArray, err := rebopScan((c.Args()[0]))
+				lengh, certArray, err := rebopScan((c.Args()[0]))
 				if err != nil {
 					log.Fatal(err)
 				}
-				err = rebopSend(certArray, RandomString(5), cfg)
-				if err != nil {
-					log.Fatal(err)
+				if lengh > 0 {
+					err = rebopSend(certArray, RandomString(5), cfg)
+					if err != nil {
+						log.Fatal(err)
+					}
+					fmt.Println("reBop file successfully sent")
 				}
-				fmt.Println("reBop file successfully sent")
-
 				return nil
 			},
 		},

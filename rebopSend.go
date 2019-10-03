@@ -15,7 +15,7 @@ func rebopSend(certArray []byte, filename string, config Config) error {
 
 	multiPartWriter := multipart.NewWriter(&requestBody)
 
-	fileWriter, err := multiPartWriter.CreateFormFile("rebopFile", filename)
+	fileWriter, err := multiPartWriter.CreateFormFile("rebopFile", filename+".json")
 	if err != nil {
 		log.Fatalln(err)
 		return err
