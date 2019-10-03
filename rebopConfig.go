@@ -37,7 +37,6 @@ func getrebopConfig(cfg *Config) {
 
 	decoder := yaml.NewDecoder(f)
 	err = decoder.Decode(cfg)
-	fmt.Print(cfg)
 	if err != nil {
 		processError(err)
 	}
