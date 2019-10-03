@@ -64,10 +64,10 @@ func parseHostForCertFiles(pathS string, paths chan fsEntry, errs chan error, wg
 
 	//var pathS string = "/Users/nicocha/Projects/"
 	//var data string
-	var i int = 0
+	//var i int = 0
 
 	filepath.Walk(pathS, func(path string, f os.FileInfo, err error) error {
-		i++
+		//i++
 		if err != nil {
 			/*
 				for i := 0; i < 100; i++ {
@@ -80,7 +80,8 @@ func parseHostForCertFiles(pathS string, paths chan fsEntry, errs chan error, wg
 			return nil
 		}
 		if !f.IsDir() {
-			paths <- fsEntry{path: path, f: f}
+			absolutePath, _ := filepath.Abs(path)
+			paths <- fsEntry{path: absolutePath, f: f}
 		}
 		/*
 			if i%100 == 0 {
@@ -125,7 +126,7 @@ func parseEntry(entry fsEntry) (*certificate, error) {
 		if err != nil {
 			return nil, err
 		}
-		//fmt.Println(filepath.Ext(entry.path))
+		fmt.Println(filepath.Ext(entry.path))
 		if cap(dat) > 0 {
 			//fmt.Println("CAP")
 			if !strings.Contains(string(dat), ("PRIVATE KEY")) && !strings.Contains(string(dat), ("PUBLIC KEY")) && !strings.Contains(string(dat), ("-----BEGIN CERTIFICATE-----")) {
@@ -149,6 +150,7 @@ func parseEntry(entry fsEntry) (*certificate, error) {
 						}
 					}
 					//fmt.Println("AFTER RETURN")
+					fmt.Println(entry.path)
 					certificate := certificate{
 						hostname,
 						"",
