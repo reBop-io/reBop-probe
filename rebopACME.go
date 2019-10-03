@@ -106,6 +106,8 @@ func getCertificatefromACME(storepath string, cfg Config) error {
 	absolutePath, _ := filepath.Abs(storepath)
 	err = ioutil.WriteFile(absolutePath+"/privatekey.pem", certificates.PrivateKey, 0644)
 	err = ioutil.WriteFile(absolutePath+"/certificate.pem", certificates.Certificate, 0644)
+	err = ioutil.WriteFile(absolutePath+"/issuer.pem", certificates.IssuerCertificate, 0644)
+
 	if err != nil {
 		panic(err)
 	}
