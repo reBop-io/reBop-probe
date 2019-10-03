@@ -1,12 +1,18 @@
 # rebop Agent configurations
 
-# User configurations
+# rebop User configuration
 user:
   rebopapikey: "KQD167R-EFJM6YN-PQZKW1N-4G4S23K"
 
-# Database credentials
+# rebop server
 rebopserver:
   proto: "http"
   host: "localhost"
   port: "3000"
+
+# ACME Certificate Authority Configuration
+acme:
+  cadirurl: "http://localhost:4001/directory"
+  useremail: "nicolas@rebop.io"
+  hostname: "app.rebop.io"
   

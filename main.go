@@ -23,6 +23,11 @@ type Config struct {
 		Port  string `yaml:"port"`
 		Proto string `yaml:"proto"`
 	} `yaml:"rebopserver"`
+	Acme struct {
+		Cadirurl  string `yaml:"cadirurl"`
+		Useremail string `yaml:"useremail"`
+		Hostname  string `yaml:"hostname"`
+	} `yaml:"acme"`
 }
 
 var ext = []string{".cer", ".cert", ".pem", ".der", ".crt"}
@@ -101,6 +106,25 @@ func main() {
 						log.Fatal(err)
 					}
 					fmt.Println("reBop file successfully sent")
+				}
+				return nil
+			},
+		},
+		{
+			Name: "renew",
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "path, p",
+					Usage: "path to store new certificate",
+				},
+			},
+			Action: func(c *cli.Context) error {
+				if c.NArg() < 1 {
+					return errors.New("usage: send <name>")
+				}
+				err := getCertificatefromACME((c.Args()[0]), cfg)
+				if err != nil {
+					log.Fatal(err)
 				}
 				return nil
 			},

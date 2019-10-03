@@ -14,7 +14,7 @@ import (
 	"time"
 )
 
-type certificate struct {
+type rebopCertificate struct {
 	Hostname  string   `json:"hostname"`
 	Port      string   `json:"port"`
 	Ipaddress []string `json:"ipaddress"`
@@ -26,7 +26,7 @@ type certificate struct {
 	Probe       string `json:"probe"`
 }
 
-type certificates []certificate
+type rebopCertificates []rebopCertificate
 
 type fsEntry struct {
 	path string
@@ -42,7 +42,7 @@ func rebopScan(rootPath string) (int, []byte, error) {
 
 	paths := make(chan fsEntry, 1)
 	errs := make(chan error, 1)
-	certs := make(chan *certificate, 1)
+	certs := make(chan *rebopCertificate, 1)
 	done := make(chan bool, 1)
 
 	wg.Add(1)
@@ -53,14 +53,14 @@ func rebopScan(rootPath string) (int, []byte, error) {
 		done <- true
 	}()
 
-	certificates := make(certificates, 0)
+	rebopCertificates := make(rebopCertificates, 0)
 
 	for {
 		select {
 		case <-done:
 			mutex.Lock()
-			certificateJSON, err := json.Marshal(certificates)
-			lengh := len(certificates)
+			certificateJSON, err := json.Marshal(rebopCertificates)
+			lengh := len(rebopCertificates)
 			if err != nil {
 				return 0, nil, err
 			}
@@ -68,7 +68,7 @@ func rebopScan(rootPath string) (int, []byte, error) {
 			mutex.Unlock()
 			return lengh, certificateJSON, nil
 		case cert := <-certs:
-			certificates = append(certificates, *cert)
+			rebopCertificates = append(rebopCertificates, *cert)
 		case err := <-errs:
 			fmt.Println("error: ", err)
 		}
@@ -110,7 +110,7 @@ func parseHostForCertFiles(pathS string, paths chan fsEntry, errs chan error, wg
 	})
 }
 
-func certWorker(entries chan fsEntry, errs chan error, certs chan *certificate, wg *sync.WaitGroup) {
+func certWorker(entries chan fsEntry, errs chan error, certs chan *rebopCertificate, wg *sync.WaitGroup) {
 	for entry := range entries {
 		wg.Add(1)
 		// too fast, need to save entry value before executing fo routine
@@ -130,7 +130,7 @@ func certWorker(entries chan fsEntry, errs chan error, certs chan *certificate, 
 	}
 }
 
-func parseEntry(entry fsEntry) (*certificate, error) {
+func parseEntry(entry fsEntry) (*rebopCertificate, error) {
 	var cert string
 
 	// todo: give the task to a worker pool
@@ -167,7 +167,7 @@ func parseEntry(entry fsEntry) (*certificate, error) {
 						}
 					}
 					//fmt.Println("AFTER RETURN")
-					certificate := certificate{
+					rebopCertificate := rebopCertificate{
 						hostname,
 						"",
 						ipaddress,
@@ -180,7 +180,7 @@ func parseEntry(entry fsEntry) (*certificate, error) {
 					mutex.Lock()
 					validCount++
 					mutex.Unlock()
-					return &certificate, nil
+					return &rebopCertificate, nil
 				}
 			}
 		}
