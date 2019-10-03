@@ -2,13 +2,14 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"io"
 	"log"
 	"mime/multipart"
 	"net/http"
 )
 
-func rebopSend(certArray []byte, filename string) {
+func rebopSend(certArray []byte, filename string, config Config) error {
 	reader := bytes.NewReader(certArray)
 	var requestBody bytes.Buffer
 
@@ -17,11 +18,13 @@ func rebopSend(certArray []byte, filename string) {
 	fileWriter, err := multiPartWriter.CreateFormFile("rebopFile", filename)
 	if err != nil {
 		log.Fatalln(err)
+		return err
 	}
 
 	_, err = io.Copy(fileWriter, reader)
 	if err != nil {
 		log.Fatalln(err)
+		return err
 	}
 
 	//fieldWriter, err := multiPartWriter.CreateFormField("test")
@@ -35,24 +38,23 @@ func rebopSend(certArray []byte, filename string) {
 	//}
 
 	multiPartWriter.Close()
-	req, err := http.NewRequest("POST", "http://localhost:3000/files/upload/", &requestBody)
+	req, err := http.NewRequest("POST", config.Rebopserver.Proto+"://"+config.Rebopserver.Host+":"+config.Rebopserver.Port+"/files/upload/", &requestBody)
 	if err != nil {
 		log.Fatalln(err)
+		return err
 	}
 
 	req.Header.Set("Content-Type", multiPartWriter.FormDataContentType())
-	req.Header.Set("Authorization", "Api-Key KQD167R-EFJM6YN-PQZKW1N-4G4S23K")
+	req.Header.Set("Authorization", "Api-Key "+config.User.Rebopapikey)
 
 	client := &http.Client{}
 	response, err := client.Do(req)
 	if err != nil {
 		log.Fatalln(err)
+		return err
 	}
-
-	//var result map[string]interface{}
-
-	//json.NewDecoder(response.Status).Decode(&result)
-
-	//log.Println(result)
-	log.Println(response.Status)
+	if response.StatusCode != 200 {
+		return errors.New("Can't connect to rebop Server: " + response.Status)
+	}
+	return nil
 }

@@ -1,0 +1,12 @@
+# rebop Agent configurations
+
+# User configurations
+user:
+  rebopapikey: "KQD167R-EFJM6YN-PQZKW1N-4G4S23K"
+
+# Database credentials
+rebopserver:
+  proto: "http"
+  host: "localhost"
+  port: "3000"
+  

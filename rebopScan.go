@@ -14,6 +14,25 @@ import (
 	"time"
 )
 
+type certificate struct {
+	Hostname  string   `json:"hostname"`
+	Port      string   `json:"port"`
+	Ipaddress []string `json:"ipaddress"`
+	Filename  string   `json:"filename"`
+	Path      string   `json:"path"`
+	//privatekeypath string `json:"privatekeypath"`
+	Certificate string `json:"certificate"`
+	Date        string `json:"date"`
+	Probe       string `json:"probe"`
+}
+
+type certificates []certificate
+
+type fsEntry struct {
+	path string
+	f    os.FileInfo
+}
+
 func rebopScan(rootPath string) ([]byte, error) {
 	if _, err := os.Stat(rootPath); os.IsNotExist(err) {
 		fmt.Printf("Couldn't open %s", rootPath)
@@ -40,14 +59,12 @@ func rebopScan(rootPath string) ([]byte, error) {
 		select {
 		case <-done:
 			mutex.Lock()
-			fmt.Println("Done in:", time.Since(start), "\nParsed", parsedCount, "files\nFound", len(certificates), "out of", validCount, "certificates")
-			mutex.Unlock()
-
 			certificateJSON, err := json.Marshal(certificates)
 			if err != nil {
 				return nil, err
 			}
-			//fmt.Printf("Name: %s\nComment: %s\nModTime: %s\n\n", zw.Name, zw.Comment, zw.ModTime.UTC())
+			fmt.Println("reBop scan Completed in :", time.Since(start), "\nParsed", parsedCount, "files\nFound", len(certificates), "out of", validCount, "certificates")
+			mutex.Unlock()
 			return certificateJSON, nil
 		case cert := <-certs:
 			certificates = append(certificates, *cert)
@@ -126,7 +143,6 @@ func parseEntry(entry fsEntry) (*certificate, error) {
 		if err != nil {
 			return nil, err
 		}
-		fmt.Println(filepath.Ext(entry.path))
 		if cap(dat) > 0 {
 			//fmt.Println("CAP")
 			if !strings.Contains(string(dat), ("PRIVATE KEY")) && !strings.Contains(string(dat), ("PUBLIC KEY")) && !strings.Contains(string(dat), ("-----BEGIN CERTIFICATE-----")) {
@@ -150,7 +166,6 @@ func parseEntry(entry fsEntry) (*certificate, error) {
 						}
 					}
 					//fmt.Println("AFTER RETURN")
-					fmt.Println(entry.path)
 					certificate := certificate{
 						hostname,
 						"",

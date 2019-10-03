@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-func rebopStore(certificateJSON []byte, outfile string) error {
+func rebopStore(certificateJSON []byte, outfile string) (string, error) {
 	var filename = outfile + "-rebop-" + time.Now().Local().Format("2006-01-02") + ".gz"
 	// Open the gzip file.
 	f, _ := os.Create(filename)
@@ -25,11 +25,12 @@ func rebopStore(certificateJSON []byte, outfile string) error {
 	if err != nil {
 		//log.Println(err)
 		log.Fatal(err)
+		return "", err
 	}
 	if err := zw.Close(); err != nil {
 		//log.Println(err)
 		log.Fatal(err)
-		return err
+		return "", err
 	}
-	return nil
+	return filename, nil
 }
