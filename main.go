@@ -51,18 +51,18 @@ func main() {
 	// scan : scans localhost for certificate
 	// send : send local rebop file to remote rebop server
 	// reset : reset local database
-	app.Usage = "scan your filesystem for certificates and encrypt them into one file"
+	app.Usage = "Scans, renew and sends certificates to reBop. "
 	app.Commands = []cli.Command{
 		{
 			Name: "scan",
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:  "path, p",
-					Usage: "path to scan",
+					Usage: "Scan path ",
 				},
 				cli.StringFlag{
 					Name:  "out, o",
-					Usage: "output file",
+					Usage: "Output file",
 				},
 			},
 			Action: func(c *cli.Context) error {
@@ -94,7 +94,7 @@ func main() {
 			},
 			Action: func(c *cli.Context) error {
 				if c.NArg() < 1 {
-					return errors.New("usage: send <name>")
+					return errors.New("usage: send <filename>")
 				}
 				lengh, certArray, err := rebopScan((c.Args()[0]))
 				if err != nil {
@@ -120,7 +120,7 @@ func main() {
 			},
 			Action: func(c *cli.Context) error {
 				if c.NArg() < 1 {
-					return errors.New("usage: send <name>")
+					return errors.New("usage: renew <path>")
 				}
 				err := getCertificatefromACME((c.Args()[0]), cfg)
 				if err != nil {
@@ -130,7 +130,9 @@ func main() {
 			},
 		},
 	}
-	if err := app.Run(os.Args); err != nil {
+
+	err := app.Run(os.Args)
+	if err != nil {
 		log.Fatal(err)
 	}
 }

@@ -35,7 +35,7 @@ type fsEntry struct {
 
 func rebopScan(rootPath string) (int, []byte, error) {
 	if _, err := os.Stat(rootPath); os.IsNotExist(err) {
-		fmt.Printf("Couldn't open %s", rootPath)
+		//fmt.Printf("Couldn't open %s", rootPath)
 		return 0, nil, err
 	}
 	var wg sync.WaitGroup
@@ -64,7 +64,7 @@ func rebopScan(rootPath string) (int, []byte, error) {
 			if err != nil {
 				return 0, nil, err
 			}
-			fmt.Println("reBop scan Completed in :", time.Since(start), "\nParsed", parsedCount, "files\nFound", lengh, "out of", validCount, "certificates")
+			fmt.Println("reBop scan Completed in :", time.Since(start), "\nParsed", parsedCount, "files\nFound", lengh, "out of", validCount, "certificates or bundle files")
 			mutex.Unlock()
 			return lengh, certificateJSON, nil
 		case cert := <-certs:
