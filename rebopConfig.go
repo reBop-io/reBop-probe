@@ -2,10 +2,10 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"path"
 	"path/filepath"
-	"runtime"
 	"strings"
 
 	"gopkg.in/yaml.v2"
@@ -17,8 +17,13 @@ func getConfigFileName() string {
 	if len(env) == 0 {
 		env = "development"
 	}
-	filename := []string{"config/", "config.", env, ".yml"}
-	_, dirname, _, _ := runtime.Caller(0)
+
+	dirname, err := os.Executable()
+	if err != nil {
+		log.Println(err)
+	}
+	filename := []string{"/config/", "config.", env, ".yml"}
+	//_, dirname, _, _ := runtime.Caller(0)
 	filePath := path.Join(filepath.Dir(dirname), strings.Join(filename, ""))
 
 	return filePath
