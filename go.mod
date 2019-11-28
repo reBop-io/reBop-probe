@@ -1,6 +1,6 @@
 module github.com/nicocha/rebopagent
 
-go 1.12
+go 1.13
 
 require (
 	github.com/go-acme/lego/v3 v3.0.2

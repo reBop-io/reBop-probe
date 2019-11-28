@@ -64,7 +64,7 @@ func rebopScan(rootPath string) (int, []byte, error) {
 			if err != nil {
 				return 0, nil, err
 			}
-			fmt.Println("reBop scan Completed in :", time.Since(start), "\nParsed", parsedCount, "files\nFound", lengh, "out of", validCount, "certificates or bundle files")
+			fmt.Println("reBop scan Completed in :", time.Since(start), "\nParsed", parsedCount, "files\nFound", validCount, "valid files")
 			mutex.Unlock()
 			return lengh, certificateJSON, nil
 		case cert := <-certs:
@@ -77,23 +77,8 @@ func rebopScan(rootPath string) (int, []byte, error) {
 
 func parseHostForCertFiles(pathS string, paths chan fsEntry, errs chan error, wg *sync.WaitGroup) {
 	defer wg.Done()
-	//certpool, _ := x509.SystemCertPool()
-	//fmt.Println(certpool.Subjects())
-
-	//var pathS string = "/Users/nicocha/Projects/"
-	//var data string
-	//var i int = 0
-
 	filepath.Walk(pathS, func(path string, f os.FileInfo, err error) error {
-		//i++
 		if err != nil {
-			/*
-				for i := 0; i < 100; i++ {
-					log.Println("**********************************************")
-				}
-				log.Println(err)
-				log.Println("**********************************************")
-			*/
 			errs <- err
 			return nil
 		}
@@ -101,11 +86,6 @@ func parseHostForCertFiles(pathS string, paths chan fsEntry, errs chan error, wg
 			absolutePath, _ := filepath.Abs(path)
 			paths <- fsEntry{path: absolutePath, f: f}
 		}
-		/*
-			if i%100 == 0 {
-				fmt.Println(i, len(paths), time.Since(start), parsedCount, validCount)
-			}
-		*/
 		return nil
 	})
 }

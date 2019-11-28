@@ -3,7 +3,6 @@ package main // import "github.com/nicocha/rebopagent"
 import (
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"sync"
 	"time"
@@ -50,34 +49,32 @@ func main() {
 	// Possible command for rebop-agent are
 	// scan : scans localhost for certificate
 	// send : send local rebop file to remote rebop server
-	// reset : reset local database
-	app.Usage = "Scans, renew and sends certificates to reBop. "
+	// acme-cert : get new or renew certificate with ACME PKI (letsencrypt or other)
+	app.Usage = "Scan local drives for certificates and send them to reBop.\n\t\tGet and renew certificate from an ACME PKI (LetsEncrypt or other)"
 	app.Commands = []cli.Command{
 		{
 			Name: "scan",
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:  "path, p",
-					Usage: "Scan path ",
+					Usage: "Scan path from `PATH` and store results ",
 				},
 				cli.StringFlag{
 					Name:  "out, o",
-					Usage: "Output file",
+					Usage: "Output file to `FILE`",
 				},
 			},
 			Action: func(c *cli.Context) error {
-				if c.NArg() < 2 {
-					return errors.New("usage: scan '<path>' '<output file>'")
-				}
-				length, certArray, err := rebopScan((c.Args()[0]))
+				length, certArray, err := rebopScan(c.String("path"))
 				if err != nil {
-					//log.Println(err)
-					log.Fatal(err)
+					fmt.Println(err)
+					os.Exit(1)
 				}
 				if length > 0 {
-					f, err := rebopStore(certArray, c.Args()[1])
+					f, err := rebopStore(certArray, c.String("out"))
 					if err != nil {
-						log.Fatal(err)
+						fmt.Println(err)
+						os.Exit(1)
 					}
 					fmt.Println("reBop file created: ", f)
 				}
@@ -89,21 +86,20 @@ func main() {
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:  "path, p",
-					Usage: "path to scan",
+					Usage: "Scans path from `PATH` and sends result to reBop server",
 				},
 			},
 			Action: func(c *cli.Context) error {
-				if c.NArg() < 1 {
-					return errors.New("usage: send <filename>")
-				}
-				lengh, certArray, err := rebopScan((c.Args()[0]))
+				lengh, certArray, err := rebopScan(c.String("path"))
 				if err != nil {
-					log.Fatal(err)
+					fmt.Println(err)
+					os.Exit(1)
 				}
 				if lengh > 0 {
 					err = rebopSend(certArray, rebopRandomString(5), cfg)
 					if err != nil {
-						log.Fatal(err)
+						fmt.Println(err)
+						os.Exit(1)
 					}
 					fmt.Println("reBop file successfully sent")
 				}
@@ -111,7 +107,7 @@ func main() {
 			},
 		},
 		{
-			Name: "renew",
+			Name: "acme-cert",
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:  "path, p",
@@ -124,7 +120,8 @@ func main() {
 				}
 				err := getCertificatefromACME((c.Args()[0]), cfg)
 				if err != nil {
-					log.Fatal(err)
+					fmt.Println(err)
+					os.Exit(1)
 				}
 				return nil
 			},
@@ -133,6 +130,7 @@ func main() {
 
 	err := app.Run(os.Args)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
+		os.Exit(1)
 	}
 }
