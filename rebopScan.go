@@ -126,7 +126,9 @@ func parseEntry(entry fsEntry) (*rebopCertificate, error) {
 		}
 		if cap(dat) > 0 {
 			//fmt.Println("CAP")
-			if !strings.Contains(string(dat), ("PRIVATE KEY")) && !strings.Contains(string(dat), ("PUBLIC KEY")) && !strings.Contains(string(dat), ("-----BEGIN CERTIFICATE-----")) {
+			if strings.Contains(string(dat), ("PRIVATE KEY")) || strings.Contains(string(dat), ("PUBLIC KEY")) {
+				return nil, nil
+			} else if !strings.Contains(string(dat), ("-----BEGIN CERTIFICATE-----")) {
 				cert = base64.StdEncoding.EncodeToString(dat)
 				cert = insertNth(cert, 64)
 				cert = "-----BEGIN CERTIFICATE-----" + "\n" + cert + "\n" + "-----END CERTIFICATE-----"
