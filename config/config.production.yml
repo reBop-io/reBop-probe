@@ -1,0 +1,18 @@
+# rebop Agent configurations
+
+# rebop User configuration
+user:
+  rebopapikey: ""
+
+# rebop server
+rebopserver:
+  proto: "https"
+  host: "api.rebop.io"
+  port: "443"
+
+# ACME Certificate Authority Configuration
+acme:
+  cadirurl: ""
+  useremail: ""
+  hostname: ""
+  
