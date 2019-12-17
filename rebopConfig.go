@@ -15,7 +15,7 @@ import (
 func getConfigFileName() string {
 	env := os.Getenv("ENV")
 	if len(env) == 0 {
-		env = "development"
+		env = "production"
 	}
 
 	dirname, err := os.Executable()
