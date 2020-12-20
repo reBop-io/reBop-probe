@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/sha256"
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
@@ -64,7 +65,7 @@ func rebopScan(rootPath string) (int, []byte, error) {
 			if err != nil {
 				return 0, nil, err
 			}
-			fmt.Println("reBop scan Completed in :", time.Since(start), "\nParsed", parsedCount, "files\nFound", validCount, "valid files")
+			fmt.Println("reBop scan Completed in :", time.Since(start), "\nParsed", parsedCount, "files\nFound", validCount, "new files,", knownCount, "known files and", errorCount, "files without certificate")
 			mutex.Unlock()
 			return lengh, certificateJSON, nil
 		case cert := <-certs:
@@ -93,7 +94,7 @@ func parseHostForCertFiles(pathS string, paths chan fsEntry, errs chan error, wg
 func certWorker(entries chan fsEntry, errs chan error, certs chan *rebopCertificate, wg *sync.WaitGroup) {
 	for entry := range entries {
 		wg.Add(1)
-		// too fast, need to save entry value before executing fo routine
+		// too fast, need to save entry value before executing go routine
 		entryCopy := entry
 		go func() {
 			defer wg.Done()
@@ -127,6 +128,9 @@ func parseEntry(entry fsEntry) (*rebopCertificate, error) {
 		if cap(dat) > 0 {
 			//fmt.Println("CAP")
 			if strings.Contains(string(dat), ("PRIVATE KEY")) || strings.Contains(string(dat), ("PUBLIC KEY")) {
+				mutex.Lock()
+				errorCount++
+				mutex.Unlock()
 				return nil, nil
 			} else if !strings.Contains(string(dat), ("-----BEGIN CERTIFICATE-----")) {
 				cert = base64.StdEncoding.EncodeToString(dat)
@@ -137,6 +141,9 @@ func parseEntry(entry fsEntry) (*rebopCertificate, error) {
 				cert = string(dat)
 				block, _ := pem.Decode([]byte(cert))
 				if block == nil {
+					mutex.Lock()
+					errorCount++
+					mutex.Unlock()
 					fmt.Println("failed to parse PEM file: ", entry.path)
 				} else {
 					//fmt.Println(block.Bytes)
@@ -145,10 +152,24 @@ func parseEntry(entry fsEntry) (*rebopCertificate, error) {
 						if strings.Contains(err.Error(), "named curve") {
 							fmt.Println(err.Error())
 						} else {
+							mutex.Lock()
+							errorCount++
+							mutex.Unlock()
 							return nil, fmt.Errorf(err.Error(), entry.path)
 						}
 					}
+					pathhash := sha256.Sum256([]byte(entry.path))
+					datahash := sha256.Sum256([]byte(dat))
+					if val, ok := hashtable[pathhash]; ok && val == datahash {
+						// Exists and value are the same
+						//fmt.Printf("pathhash %x exists\n", pathhash)
+						mutex.Lock()
+						knownCount++
+						mutex.Unlock()
+						return nil, nil
+					}
 					//fmt.Println("AFTER RETURN")
+					hashtable[pathhash] = datahash
 					rebopCertificate := rebopCertificate{
 						hostname,
 						"",
