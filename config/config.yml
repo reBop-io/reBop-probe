@@ -16,3 +16,6 @@ acme:
   useremail: ""
   hostname: ""
   
+# local cache database
+agent:
+  filedb: "./reBop-agent.db"
