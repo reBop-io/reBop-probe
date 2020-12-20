@@ -24,4 +24,6 @@ main.o
 go.sum
 rebop
 rebopagent
-rebopagents
+rebopagent
+reBop-agent
+reBop-agent.db
