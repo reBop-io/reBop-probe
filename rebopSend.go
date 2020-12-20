@@ -59,7 +59,7 @@ func rebopSend(certArray []byte, filename string, config Config) error {
 		return err
 	}
 	req.Header.Set("Content-Type", multiPartWriter.FormDataContentType())
-	req.Header.Set("Authorization", "Api-Key "+config.User.Rebopapikey)
+	req.Header.Set("Authorization", "Api-Key "+config.User.reBopAPIKey)
 	fmt.Print(req)
 	client := &http.Client{}
 	response, err := client.Do(req)
