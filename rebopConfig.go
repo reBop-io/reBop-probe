@@ -28,7 +28,6 @@ func getConfigFileName() string {
 	filename := []string{"/config/", "config", env, ".yml"}
 	//_, dirname, _, _ := runtime.Caller(0)
 	filePath := path.Join(filepath.Dir(dirname), strings.Join(filename, ""))
-
 	return filePath
 }
 

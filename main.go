@@ -15,7 +15,7 @@ import (
 // Config ... exported
 type Config struct {
 	User struct {
-		Rebopapikey string `yaml:"rebopapikey", envconfig:"rebop_APIKey"`
+		reBopAPIKey string `yaml:"rebopapikey", envconfig:"reBop_APIKey"`
 	} `yaml:"user"`
 	Rebopserver struct {
 		Host  string `yaml:"host"`
@@ -27,6 +27,9 @@ type Config struct {
 		Useremail string `yaml:"useremail"`
 		Hostname  string `yaml:"hostname"`
 	} `yaml:"acme"`
+	Agent struct {
+		Filedb string `yaml:"filedb"`
+	}
 }
 
 var ext = []string{".cer", ".cert", ".pem", ".der", ".crt"}
@@ -36,19 +39,28 @@ var ipaddress = getipaddress()
 var start = time.Now()
 var parsedCount = 0
 var validCount = 0
+var knownCount = 0
+var errorCount = 0
 var mutex sync.RWMutex
 var mutex2 sync.RWMutex
+var hashtable = make(map[[32]byte][32]byte)
 
 func main() {
 	var cfg Config
 	getrebopConfig(&cfg)
 
+	// Get local db
+	if err := loadLocalDB(cfg.Agent.Filedb, &hashtable); err != nil {
+		//log.Fatalln(err)
+	}
+	defer saveLocaDB(cfg.Agent.Filedb, hashtable)
+
 	app := cli.NewApp()
-	app.Name = "rebopagent"
+	app.Name = "reBopagent"
 	app.Version = "0.1.0"
 	// Possible command for rebop-agent are
 	// scan : scans localhost for certificate
-	// send : send local rebop file to remote rebop server
+	// scansend : scans and sends localhost reBop file to remote reBop server
 	// acme-cert : get new or renew certificate with ACME PKI (letsencrypt or other)
 	app.Usage = "Scan local drives for certificates and send them to reBop.\n\t\tGet and renew certificate from an ACME PKI (LetsEncrypt or other)"
 	app.Commands = []cli.Command{
@@ -57,11 +69,11 @@ func main() {
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:  "path, p",
-					Usage: "Scan path from `PATH` and store results ",
+					Usage: "Scan path from `PATH` and store results",
 				},
 				cli.StringFlag{
 					Name:  "out, o",
-					Usage: "Output file to `FILE`",
+					Usage: "Output to `FILE`",
 				},
 			},
 			Action: func(c *cli.Context) error {
@@ -82,7 +94,7 @@ func main() {
 			},
 		},
 		{
-			Name: "send",
+			Name: "scansend",
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:  "path, p",
