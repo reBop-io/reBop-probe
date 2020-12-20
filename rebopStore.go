@@ -8,7 +8,7 @@ import (
 )
 
 func rebopStore(certificateJSON []byte, outfile string) (string, error) {
-	var filename = outfile + "-rebop-" + time.Now().Local().Format("2006-01-02") + ".gz"
+	var filename = outfile + "_rebop_" + time.Now().Local().Format("2006-01-02") + ".gz"
 	// Open the gzip file.
 	f, _ := os.Create(filename)
 	zw := gzip.NewWriter(f)
