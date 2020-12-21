@@ -1,6 +1,7 @@
-# rebopAgent
+# reBop Agent
 
-Main repo for Rebop local probe for certificates.
+Main repo for rebop local probe.
+Available commands are 
 ```
 go build 
 ```
