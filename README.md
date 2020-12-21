@@ -1,7 +1,10 @@
 # reBop Agent
 
-Main repo for rebop local probe.
-Available commands are 
+Main repository for reBop local probe.
+Available commands are :
+- scan
+- scansend
+- acme
 ```
 go build 
 ```
