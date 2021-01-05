@@ -37,12 +37,17 @@ cd ../64bits/
 zip ../../reBop-agent-64bits-windows.zip reBop-agent.exe config/config.yml
 
 cd ../../linux/32bits/
-zip ../../reBop-agent-32bits-linux.zip reBop-agent config/config.yml
+tar cfz ../../reBop-agent-32bits-linux.tgz reBop-agent config/config.yml
 
 cd ../64bits/
-zip ../../reBop-agent-64bits-linux.zip reBop-agent config/config.yml
+tar cfz ../../reBop-agent-64bits-linux.tgz reBop-agent config/config.yml
 
 cd ../../macosx/
 zip ../reBop-agent-macosx.zip reBop-agent config/config.yml
 
+echo "Deleting build files"
+cd ../../
+rm -Rf reBop-agents/windows
+rm -Rf reBop-agents/linux
+rm -Rf reBop-agents/macosx
 echo "Done"
