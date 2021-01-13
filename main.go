@@ -32,6 +32,8 @@ type Config struct {
 	}
 }
 
+var debug = false
+
 var ext = []string{".cer", ".cert", ".pem", ".der", ".crt"}
 
 var hostname = gethostname()
@@ -44,6 +46,7 @@ var errorCount = 0
 var mutex sync.RWMutex
 var mutex2 sync.RWMutex
 var hashtable = make(map[[32]byte][32]byte)
+var app = cli.NewApp()
 
 func main() {
 	var cfg Config
@@ -55,9 +58,8 @@ func main() {
 	}
 	defer saveLocaDB(cfg.Agent.Filedb, hashtable)
 
-	app := cli.NewApp()
-	app.Name = "reBopagent"
-	app.Version = "0.1.0"
+	app.Name = "reBop-agent"
+	app.Version = "0.2.0"
 	// Possible command for rebop-agent are
 	// scan : scans localhost for certificate
 	// scansend : scans and sends localhost reBop file to remote reBop server
