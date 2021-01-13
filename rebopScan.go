@@ -56,6 +56,8 @@ func rebopScan(rootPath string) (int, []byte, error) {
 
 	rebopCertificates := make(rebopCertificates, 0)
 
+	fmt.Println(app.Name, app.Version, "started - scanning ", rootPath)
+
 	for {
 		select {
 		case <-done:
@@ -65,13 +67,18 @@ func rebopScan(rootPath string) (int, []byte, error) {
 			if err != nil {
 				return 0, nil, err
 			}
-			fmt.Println("reBop scan Completed in :", time.Since(start), "\nParsed", parsedCount, "files\nFound", validCount, "new files,", knownCount, "known files and", errorCount, "files without certificate")
 			mutex.Unlock()
+			fmt.Println("\rreBop scan Completed in :", time.Since(start), "\nParsed", parsedCount, "files\nFound", validCount, "new files with certificate,", knownCount, "known files and", errorCount, "files without certificate")
 			return lengh, certificateJSON, nil
 		case cert := <-certs:
 			rebopCertificates = append(rebopCertificates, *cert)
+			//fmt.Print("Parsed ", parsedCount, "files")
 		case err := <-errs:
-			fmt.Println("error: ", err)
+			if debug {
+				fmt.Println("error: ", err)
+			}
+		default:
+			fmt.Printf("\rParsed %d files", parsedCount)
 		}
 	}
 }
@@ -144,32 +151,40 @@ func parseEntry(entry fsEntry) (*rebopCertificate, error) {
 					mutex.Lock()
 					errorCount++
 					mutex.Unlock()
-					fmt.Println("failed to parse PEM file: ", entry.path)
+					if debug {
+						fmt.Println("failed to parse PEM file: ", entry.path)
+					}
 				} else {
 					//fmt.Println(block.Bytes)
 					_, err := x509.ParseCertificate(block.Bytes)
 					if err != nil {
 						if strings.Contains(err.Error(), "named curve") {
-							fmt.Println(err.Error())
+							if debug {
+								fmt.Println(err.Error())
+							}
 						} else {
 							mutex.Lock()
 							errorCount++
 							mutex.Unlock()
-							return nil, fmt.Errorf(err.Error(), entry.path)
+							return nil, err
+							//return nil, fmt.Errorf(err.Error(), entry.path)
 						}
 					}
 					pathhash := sha256.Sum256([]byte(entry.path))
 					datahash := sha256.Sum256([]byte(dat))
+					mutex.Lock()
 					if val, ok := hashtable[pathhash]; ok && val == datahash {
 						// Exists and value are the same
 						//fmt.Printf("pathhash %x exists\n", pathhash)
-						mutex.Lock()
+						//mutex.Lock()
 						knownCount++
 						mutex.Unlock()
 						return nil, nil
 					}
 					//fmt.Println("AFTER RETURN")
+					//mutex.Lock()
 					hashtable[pathhash] = datahash
+					mutex.Unlock()
 					rebopCertificate := rebopCertificate{
 						hostname,
 						"",
