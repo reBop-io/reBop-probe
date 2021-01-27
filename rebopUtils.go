@@ -9,14 +9,6 @@ import (
 	"strings"
 )
 
-func check(e error) {
-	if e != nil {
-		//fmt.Println("Error loading file: ", e.Error())
-		fmt.Errorf(e.Error())
-		os.Exit(1)
-	}
-}
-
 // RandomString ... "Return a random string of n character"
 func rebopRandomString(n int) string {
 	var letter = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
@@ -25,6 +17,7 @@ func rebopRandomString(n int) string {
 	for i := range b {
 		b[i] = letter[rand.Intn(len(letter))]
 	}
+
 	return "rebop-" + string(b)
 }
 
