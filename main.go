@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/urfave/cli"
+	"github.com/zhexuany/wordGenerator"
 )
 
 //const ServiceName = "rebopagent"
@@ -15,7 +16,7 @@ import (
 // Config ... exported
 type Config struct {
 	User struct {
-		reBopAPIKey string `yaml:"rebopapikey", envconfig:"reBop_APIKey"`
+		ReBopAPIKey string `yaml:"rebopapikey", envconfig:"ReBopAPIKey"`
 	} `yaml:"user"`
 	Rebopserver struct {
 		Host  string `yaml:"host"`
@@ -110,9 +111,11 @@ func main() {
 					os.Exit(1)
 				}
 				if lengh > 0 {
-					err = rebopSend(certArray, rebopRandomString(5), cfg)
+					//err = rebopSend(certArray, rebopRandomString(5), cfg)
+					err = rebopSend(certArray, "reBop-"+wordGenerator.GetWord(5), cfg)
 					if err != nil {
 						fmt.Println(err)
+						// Need to ask the user if the created file shall be saved for later
 						os.Exit(1)
 					}
 					fmt.Println("reBop file successfully sent")
