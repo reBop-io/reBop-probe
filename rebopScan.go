@@ -181,9 +181,9 @@ func parseEntry(entry fsEntry) (*rebopCertificate, error) {
 						mutex.Unlock()
 						return nil, nil
 					}
-					//fmt.Println("AFTER RETURN")
 					//mutex.Lock()
 					hashtable[pathhash] = datahash
+					validCount++
 					mutex.Unlock()
 					rebopCertificate := rebopCertificate{
 						hostname,
@@ -195,9 +195,6 @@ func parseEntry(entry fsEntry) (*rebopCertificate, error) {
 						time.Now().UTC().Format("2006-01-02T15:04:05z"),
 						"local",
 					}
-					mutex.Lock()
-					validCount++
-					mutex.Unlock()
 					return &rebopCertificate, nil
 				}
 			}
