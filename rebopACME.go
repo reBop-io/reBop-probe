@@ -21,6 +21,7 @@ import (
 	"github.com/go-acme/lego/v3/registration"
 )
 
+// MyUser --
 // You'll need a user or account type that implements acme.User
 type MyUser struct {
 	Email        string
@@ -28,12 +29,20 @@ type MyUser struct {
 	key          crypto.PrivateKey
 }
 
+// GetEmail --
+// Method to Export email
 func (u *MyUser) GetEmail() string {
 	return u.Email
 }
+
+// GetRegistration --
+// Method to Export registration
 func (u MyUser) GetRegistration() *registration.Resource {
 	return u.Registration
 }
+
+// GetPrivateKey --
+// Method to Export PrivateKey
 func (u *MyUser) GetPrivateKey() crypto.PrivateKey {
 	return u.key
 }
