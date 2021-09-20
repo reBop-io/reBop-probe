@@ -5,13 +5,11 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/go-acme/lego/v3/certcrypto"
 	"github.com/go-acme/lego/v3/certificate"
@@ -81,13 +79,13 @@ func getCertificatefromACME(storepath string, cfg Config) error {
 	// because we aren't running as root and can't bind a listener to port 80 and 443
 	// (used later when we attempt to pass challenges). Keep in mind that you still
 	// need to proxy challenge traffic to port 5002 and 5001.
-	//err = client.Challenge.SetHTTP01Provider(http01.NewProviderServer("", "5002"))
+	// err = client.Challenge.SetHTTP01Provider(http01.NewProviderServer("", "5002"))
 	err = client.Challenge.SetHTTP01Provider(http01.NewProviderServer("", "80"))
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = client.Challenge.SetTLSALPN01Provider(tlsalpn01.NewProviderServer("", "5001"))
-	//err = client.Challenge.SetTLSALPN01Provider(tlsalpn01.NewProviderServer("", "443"))
+	// err = client.Challenge.SetTLSALPN01Provider(tlsalpn01.NewProviderServer("", "5001"))
+	err = client.Challenge.SetTLSALPN01Provider(tlsalpn01.NewProviderServer("", "443"))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -113,36 +111,61 @@ func getCertificatefromACME(storepath string, cfg Config) error {
 	//fmt.Printf("%#v\n", certificates)
 	//fmt.Print(certificates.Certificate)
 	absolutePath, _ := filepath.Abs(storepath)
-	err = ioutil.WriteFile(absolutePath+"/privatekey.pem", certificates.PrivateKey, 0644)
-	err = ioutil.WriteFile(absolutePath+"/certificate.pem", certificates.Certificate, 0644)
-	err = ioutil.WriteFile(absolutePath+"/issuer.pem", certificates.IssuerCertificate, 0644)
+	err1 := ioutil.WriteFile(absolutePath+"/privatekey.pem", certificates.PrivateKey, 0644)
+	err2 := ioutil.WriteFile(absolutePath+"/certificate.pem", certificates.Certificate, 0644)
+	err3 := ioutil.WriteFile(absolutePath+"/issuer.pem", certificates.IssuerCertificate, 0644)
 
-	if err != nil {
-		panic(err)
+	if err1 != nil {
+		panic(err1)
 	}
-
-	rebopCertificate := rebopCertificate{
-		hostname,
-		"",
-		ipaddress,
-		"certificate.pem",
-		absolutePath + "/certificate.pem",
-		string(certificates.Certificate),
-		time.Now().UTC().Format("2006-01-02T15:04:05z"),
-		"local",
+	if err2 != nil {
+		panic(err2)
 	}
-	rebopCertificates := make(rebopCertificates, 0)
-	rebopCertificates = append(rebopCertificates, rebopCertificate)
-	certificateJSON, err := json.Marshal(rebopCertificates)
-	if err != nil {
-		return err
+	if err3 != nil {
+		panic(err3)
 	}
 
-	err = rebopSend(certificateJSON, "ACME", cfg)
+
+	lengh, certArray, err := rebopScan(absolutePath)
 	if err != nil {
-		return err
+		fmt.Println(err)
+		os.Exit(1)
 	}
-	fmt.Println("reBop renew Completed:", absolutePath+"/certificate.pem", "\nCertificate successfully sent to rebop")
+	if lengh > 0 {
+		//err = rebopSend(certArray, rebopRandomString(5), cfg)
+		err = rebopSend(certArray, "ACME"+hostname, cfg)
+		// err = rebopSend(certArray, "reBop-"+wordGenerator.GetWord(5), cfg)
+		if err != nil {
+			fmt.Println(err)
+			// Need to ask the user if the created file shall be saved for later
+			os.Exit(1)
+		}
+		fmt.Println("reBop file successfully sent")
+	}
+
+
+	// rebopCertificate := rebopCertificate{
+	// 	hostname,
+	// 	"",
+	// 	ipaddress,
+	// 	"certificate.pem",
+	// 	absolutePath + "/certificate.pem",
+	// 	string(certificates.Certificate),
+	// 	time.Now().UTC().Format("2006-01-02T15:04:05z"),
+	// 	"local",
+	// }
+	// rebopCertificates := make(rebopCertificates, 0)
+	// rebopCertificates = append(rebopCertificates, rebopCertificate)
+	// certificateJSON, err := json.Marshal(rebopCertificates)
+	// if err != nil {
+	// 	return err
+	// }
+
+	// err = rebopSend(certificateJSON, "ACME", cfg)
+	// if err != nil {
+	// 	return err
+	// }
+	fmt.Println("reBop renew Completed:", absolutePath+"/certificate.pem", "\nCertificates successfully sent to rebop")
 	return nil
 	// ... all done.
 }
