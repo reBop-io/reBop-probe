@@ -1,4 +1,4 @@
-module github.com/nicocha/reBop-agent
+module github.com/nicocha/reBop-probe
 
 go 1.15
 

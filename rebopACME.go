@@ -17,6 +17,7 @@ import (
 	"github.com/go-acme/lego/v3/challenge/tlsalpn01"
 	"github.com/go-acme/lego/v3/lego"
 	"github.com/go-acme/lego/v3/registration"
+	"github.com/zhexuany/wordGenerator"
 )
 
 // MyUser --
@@ -133,8 +134,7 @@ func getCertificatefromACME(storepath string, cfg Config) error {
 	}
 	if lengh > 0 {
 		//err = rebopSend(certArray, rebopRandomString(5), cfg)
-		err = rebopSend(certArray, "ACME"+hostname, cfg)
-		// err = rebopSend(certArray, "reBop-"+wordGenerator.GetWord(5), cfg)
+		err = rebopSend(certArray, "reBop-"+hostname+wordGenerator.GetWord(5), cfg)
 		if err != nil {
 			fmt.Println(err)
 			// Need to ask the user if the created file shall be saved for later

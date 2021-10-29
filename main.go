@@ -1,4 +1,4 @@
-package main // import "github.com/nicocha/rebopagent"
+package main
 
 import (
 	"errors"
@@ -11,9 +11,7 @@ import (
 	"github.com/zhexuany/wordGenerator"
 )
 
-//const ServiceName = "rebopagent"
-
-// Config ... exported
+// Config
 type Config struct {
 	User struct {
 		ReBopAPIKey string `yaml:"rebopapikey", envconfig:"ReBopAPIKey"`
@@ -28,7 +26,7 @@ type Config struct {
 		Useremail string `yaml:"useremail"`
 		Hostname  string `yaml:"hostname"`
 	} `yaml:"acme"`
-	Agent struct {
+	Probe struct {
 		Filedb string `yaml:"filedb"`
 	}
 }
@@ -45,7 +43,7 @@ var validCount = 0
 var knownCount = 0
 var errorCount = 0
 var mutex sync.RWMutex
-var mutex2 sync.RWMutex
+// var mutex2 sync.RWMutex
 var hashtable = make(map[[32]byte][32]byte)
 var app = cli.NewApp()
 
@@ -54,14 +52,14 @@ func main() {
 	getrebopConfig(&cfg)
 
 	// Get local db
-	if err := loadLocalDB(cfg.Agent.Filedb, &hashtable); err != nil {
+	if err := loadLocalDB(cfg.Probe.Filedb, &hashtable); err != nil {
 		//log.Fatalln(err)
 	}
-	defer saveLocaDB(cfg.Agent.Filedb, hashtable)
+	defer saveLocaDB(cfg.Probe.Filedb, hashtable)
 
-	app.Name = "reBop-agent"
-	app.Version = "0.2.0"
-	// Possible command for rebop-agent are
+	app.Name = "reBop-probe"
+	app.Version = "0.3.0"
+	// Possible command for rebop-probe are
 	// scan : scans localhost for certificate
 	// scansend : scans and sends localhost reBop file to remote reBop server
 	// acme-cert : get new or renew certificate with ACME PKI (letsencrypt or other)

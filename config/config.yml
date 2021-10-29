@@ -1,10 +1,10 @@
-# rebop Agent configurations
+# reBop probe configurations
 
-# rebop User configuration
+# reBop User configuration
 user:
   rebopapikey: ""
 
-# rebop server
+# reBop server
 rebopserver:
   proto: "https"
   host: "api.rebop.io"
@@ -15,7 +15,7 @@ acme:
   cadirurl: ""
   useremail: ""
   hostname: ""
-  
+
 # local cache database
-agent:
-  filedb: "./reBop-agent.db"
+probe:
+  filedb: "./reBop-probe.db"
