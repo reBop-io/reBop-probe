@@ -5,9 +5,9 @@ reBop probe
 <p align="center">reBop probe scans local filesystem for certificate. It creates a reBop file to import to <a href="https://www.rebop.io">reBop</a>.
 It also gets and renew digital certificate from any ACME PKI and sends it to reBop to be monitored.</p>
 
-<p align="center"><a href='https://www.rebop.io'> 
-<img src='https://img.shields.io/badge/HOMEPAGE-gray?style=for-the-badge'></a>&nbsp;<a href='https:/docs.rebop.io'>
-<img src='https://img.shields.io/badge/DOCS-blue?style=for-the-badge'></a></p>
+<p align="center"><a href="https://www.rebop.io"> 
+<img src="https://img.shields.io/badge/HOMEPAGE-gray?style=for-the-badge"></a>&nbsp;<a href="https://docs.rebop.io">
+<img src="https://img.shields.io/badge/DOCS-blue?style=for-the-badge"></a></p>
 
 ---
 
