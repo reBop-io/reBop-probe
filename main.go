@@ -53,7 +53,7 @@ func main() {
 
 	// Get local db
 	if err := loadLocalDB(cfg.Probe.Filedb, &hashtable); err != nil {
-		//log.Fatalln(err)
+		// log.Fatalln(err)
 	}
 	defer saveLocaDB(cfg.Probe.Filedb, hashtable)
 
@@ -63,14 +63,14 @@ func main() {
 	// scan : scans localhost for certificate
 	// scansend : scans and sends localhost reBop file to remote reBop server
 	// acme-cert : get new or renew certificate with ACME PKI (letsencrypt or other)
-	app.Usage = "Scan local drives for certificates and send them to reBop.\n\t\tGet and renew certificate from an ACME PKI (LetsEncrypt or other)"
+	app.Usage = "Scan local filesystem for certificates and send them to reBop.\n\t\tGet and renew certificate from an ACME PKI (Let's Encrypt or others)"
 	app.Commands = []cli.Command{
 		{
 			Name: "scan",
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:  "path, p",
-					Usage: "Scan path from `PATH` and store results",
+					Usage: "Scan path from `PATH`",
 				},
 				cli.StringFlag{
 					Name:  "out, o",
