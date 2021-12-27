@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/rebop-io/reBop-probe/log"
 	"github.com/urfave/cli"
 	"github.com/zhexuany/wordGenerator"
 )
@@ -58,7 +59,7 @@ func main() {
 	defer saveLocaDB(cfg.Probe.Filedb, hashtable)
 
 	app.Name = "reBop-probe"
-	app.Version = "0.3.0"
+	app.Version = "0.4.0"
 	// Possible command for rebop-probe are
 	// scan : scans localhost for certificate
 	// scansend : scans and sends localhost reBop file to remote reBop server
@@ -89,7 +90,7 @@ func main() {
 						fmt.Println(err)
 						os.Exit(1)
 					}
-					fmt.Println("reBop file created: ", f)
+					log.Infof("reBop file created: %s", f)
 				}
 				return nil
 			},
@@ -110,13 +111,14 @@ func main() {
 				}
 				if lengh > 0 {
 					//err = rebopSend(certArray, rebopRandomString(5), cfg)
-					err = rebopSend(certArray, "reBop-"+wordGenerator.GetWord(5), cfg)
+					uploadName := "reBop-"+wordGenerator.GetWord(5)+".json"
+					err = rebopSend(certArray, uploadName, cfg)
 					if err != nil {
 						fmt.Println(err)
 						// Need to ask the user if the created file shall be saved for later
 						os.Exit(1)
 					}
-					fmt.Println("reBop file successfully sent")
+					log.Infof("reBop file [%s] successfully sent", uploadName)
 				}
 				return nil
 			},

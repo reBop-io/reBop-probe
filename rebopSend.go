@@ -3,24 +3,18 @@ package main
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"mime/multipart"
 	"net/http"
 	"net/textproto"
+
+	"github.com/rebop-io/reBop-probe/log"
 )
 
 func rebopSend(certArray []byte, filename string, config Config) error {
-	//reader := bytes.NewReader(certArray)
 	var requestBody bytes.Buffer
-
 	multiPartWriter := multipart.NewWriter(&requestBody)
-
-	//fileWriter, err := multiPartWriter.CreateFormFile("rebopFile", filename+".json")
-
 	partHeaders := textproto.MIMEHeader{}
-	partHeaders.Set("Content-Disposition", "form-data; name=\"rebopFile\"; filename=\""+filename+".json\"")
-	//partHeaders.Set("name", "rebopFile")
-	//partHeaders.Set("rebopFile", filename+".json")
+	partHeaders.Set("Content-Disposition", "form-data; name=\"rebopFile\"; filename=\""+filename+"\"")
 	partHeaders.Set("Content-Type", "application/json")
 	//partHeaders.Set("Content-Type", "application/gzip")
 	fileWriter, err := multiPartWriter.CreatePart(partHeaders)
@@ -61,12 +55,13 @@ func rebopSend(certArray []byte, filename string, config Config) error {
 	req.Header.Set("Content-Type", multiPartWriter.FormDataContentType())
 	req.Header.Set("Authorization", "Api-Key "+config.User.ReBopAPIKey)
 	//fmt.Print(req)
-	fmt.Println("Connecting to " + req.Host + " with API-Key")
+	log.Infof("Connecting to %s with API-Key", req.Host)
 	client := &http.Client{}
 	response, err := client.Do(req)
 	if err != nil {
 		return err
 	}
+	log.Infof("%s responded with %d status code", req.Host, response.StatusCode)
 	if response.StatusCode != 200 {
 		return errors.New("Can't connect to rebop Server: " + response.Status)
 	}

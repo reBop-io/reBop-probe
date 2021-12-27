@@ -7,7 +7,6 @@ import (
 	"crypto/rand"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -17,6 +16,7 @@ import (
 	"github.com/go-acme/lego/v3/challenge/tlsalpn01"
 	"github.com/go-acme/lego/v3/lego"
 	"github.com/go-acme/lego/v3/registration"
+	"github.com/rebop-io/reBop-probe/log"
 	"github.com/zhexuany/wordGenerator"
 )
 
@@ -134,15 +134,13 @@ func getCertificatefromACME(storepath string, cfg Config) error {
 	}
 	if lengh > 0 {
 		//err = rebopSend(certArray, rebopRandomString(5), cfg)
-		err = rebopSend(certArray, "reBop-"+hostname+wordGenerator.GetWord(5), cfg)
+		uploadName := "reBop-"+hostname+wordGenerator.GetWord(5)+".json"
+		err = rebopSend(certArray, uploadName, cfg)
 		if err != nil {
-			fmt.Println(err)
-			// Need to ask the user if the created file shall be saved for later
-			os.Exit(1)
+			log.Fatal(err)
 		}
-		fmt.Println("reBop file successfully sent")
+		log.Infof("reBop file [%s] successfully sent", uploadName)
 	}
-
 
 	// rebopCertificate := rebopCertificate{
 	// 	hostname,
@@ -165,7 +163,8 @@ func getCertificatefromACME(storepath string, cfg Config) error {
 	// if err != nil {
 	// 	return err
 	// }
-	fmt.Println("reBop renew Completed:", absolutePath+"/certificate.pem", "\nCertificates successfully sent to rebop")
+	log.Infof("reBop renew Completed: [%s]/certificate.pem\n", absolutePath)
+	log.Infof("Certificates successfully sent to rebop")
 	return nil
 	// ... all done.
 }

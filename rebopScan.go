@@ -13,6 +13,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/rebop-io/reBop-probe/log"
 )
 
 type rebopCertificate struct {
@@ -56,7 +58,7 @@ func rebopScan(rootPath string) (int, []byte, error) {
 
 	rebopCertificates := make(rebopCertificates, 0)
 
-	fmt.Println(app.Name, app.Version, "started - scanning ", rootPath)
+	log.Infof("%s %s started - scanning %s", app.Name, app.Version, rootPath)
 
 	for {
 		select {
@@ -68,7 +70,10 @@ func rebopScan(rootPath string) (int, []byte, error) {
 				return 0, nil, err
 			}
 			mutex.Unlock()
-			fmt.Println("\rreBop scan Completed in :", time.Since(start), "\nParsed", parsedCount, "files\nFound", validCount, "new files with certificate,", knownCount, "known files and", errorCount, "files without certificate")
+			fmt.Println("")
+			log.Infof("reBop scan Completed in : %s", time.Since(start))
+			log.Infof("Parsed: %d files", parsedCount)
+			log.Infof("Found: %d new files with certificate, %d known files and %d files without certificate", validCount, knownCount, errorCount)
 			return lengh, certificateJSON, nil
 		case cert := <-certs:
 			rebopCertificates = append(rebopCertificates, *cert)
