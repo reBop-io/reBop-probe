@@ -2,7 +2,7 @@
   <img src="https://s3.eu-west-3.amazonaws.com/static.rebop.io/img/rebop.png" width="224px"alt="reBop logo" title="reBop" /><br/><br />
 reBop probe
 </h1>
-<p align="center">reBop probe scans local filesystem for certificate. It creates a reBop file to import to <a href="https://www.rebop.io">reBop</a>.
+<p align="center">reBop probe scans local filesystem for digital certificates. It creates a reBop file to import to <a href="https://www.rebop.io">reBop</a>.
 It also gets and renew digital certificate from any ACME PKI and sends it to reBop to be monitored.</p>
 
 <p align="center"><a href="https://www.rebop.io"> 
