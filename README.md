@@ -28,8 +28,8 @@ You're all set to use reBop probe! 🎉
 
 ## 📖 Project Docs
 
-The best way to better explore all the features of the **reBop probe** is to read the project [Docs](https://docs.rebop.io) and take part in [Issues](https://github.com/reBop-io/reBop-probe/issues). Yes, the most frequently asked questions (_FAQ_) are also [here](https://www.rebop.io/support/#faq).
+The best way to better explore all the features of the **reBop probe** is to read the project [Docs](https://docs.rebop.io) and take part in [Issues](https://github.com/reBop-io/reBop-probe/issues). And yes, the most frequently asked questions (_FAQ_) are also [here](https://www.rebop.io/support/#faq).
 
 ## ⚠️ License
 
-`reBop probe` is free and open-source software licensed under the [Apache 2.0 License](https://github.com/create-go-app/cli/blob/master/LICENSE).
+`reBop-probe` is free and open-source software licensed under the [Apache 2.0 License](https://github.com/create-go-app/cli/blob/master/LICENSE).
