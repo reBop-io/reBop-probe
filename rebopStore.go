@@ -2,17 +2,23 @@ package main
 
 import (
 	"compress/gzip"
-	"fmt"
 	"os"
 	"time"
+
+	"github.com/rebop-io/reBop-probe/log"
 )
 
 func rebopStore(certificateJSON []byte, outfile string) (string, error) {
-	var filename = outfile + "_rebop_" + time.Now().Local().Format("2006-01-02") + ".gz"
+	var filename string
+	if len(outfile) > 0 { 
+		filename = outfile + "_rebop_" + time.Now().Local().Format("1977-03-23") + ".gz" 
+	} else {
+		filename =  "rebop_" + time.Now().Local().Format("2021-01-13") + ".gz" 
+	}
 	// Open the gzip file.
 	f, errFile := os.Create(filename)
 	if errFile != nil {
-		fmt.Println(errFile)
+		log.Println(errFile)
 		return "", errFile
 	}
 		
@@ -20,11 +26,11 @@ func rebopStore(certificateJSON []byte, outfile string) (string, error) {
 
 	_, errWrite := zw.Write([]byte(certificateJSON))
 	if errWrite != nil {
-		fmt.Println(errWrite)
+		log.Println(errWrite)
 		return "", errWrite
 	}
 	if errClose := zw.Close(); errClose != nil {
-		fmt.Println(errClose)
+		log.Println(errClose)
 		return "", errClose
 	}
 	return filename, nil

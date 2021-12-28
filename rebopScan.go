@@ -70,14 +70,13 @@ func rebopScan(rootPath string) (int, []byte, error) {
 				return 0, nil, err
 			}
 			mutex.Unlock()
-			fmt.Println("")
+			fmt.Printf("\r")
 			log.Infof("reBop scan Completed in : %s", time.Since(start))
 			log.Infof("Parsed: %d files", parsedCount)
 			log.Infof("Found: %d new files with certificate, %d known files and %d files without certificate", validCount, knownCount, errorCount)
 			return lengh, certificateJSON, nil
 		case cert := <-certs:
 			rebopCertificates = append(rebopCertificates, *cert)
-			//fmt.Print("Parsed ", parsedCount, "files")
 		case err := <-errs:
 			if debug {
 				fmt.Println("error: ", err)
