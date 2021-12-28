@@ -11,8 +11,8 @@
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 rebop-local.code-workspace
-_rebop_*.json
-_rebop_*.gz
+*rebop_*.json
+*rebop_*.gz
 .DS_Store
 gogrep.go
 main.o
@@ -23,7 +23,9 @@ rebopprobe
 reBop-probe
 local.db
 config/config.development.yml
+build-probes.sh
 reBop-probe-bin/*
 
-*_rebop_*.gz
 *.crt
+*.cer
+*.pem
