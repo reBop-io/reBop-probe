@@ -21,7 +21,7 @@ go.sum
 rebop
 rebopprobe
 reBop-probe
-reBop-probe.db
+local.db
 config/config.development.yml
 reBop-probe-bin/*
 
