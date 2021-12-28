@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"sync"
 	"time"
@@ -81,14 +80,12 @@ func main() {
 			Action: func(c *cli.Context) error {
 				length, certArray, err := rebopScan(c.String("path"))
 				if err != nil {
-					fmt.Println(err)
-					os.Exit(1)
+					log.Fatal(err)
 				}
 				if length > 0 {
 					f, err := rebopStore(certArray, c.String("out"))
 					if err != nil {
-						fmt.Println(err)
-						os.Exit(1)
+						log.Fatal(err)
 					}
 					log.Infof("reBop file created: %s", f)
 				}
@@ -106,17 +103,14 @@ func main() {
 			Action: func(c *cli.Context) error {
 				lengh, certArray, err := rebopScan(c.String("path"))
 				if err != nil {
-					fmt.Println(err)
-					os.Exit(1)
+					log.Fatal(err)
 				}
 				if lengh > 0 {
 					//err = rebopSend(certArray, rebopRandomString(5), cfg)
 					uploadName := "reBop-"+wordGenerator.GetWord(5)+".json"
 					err = rebopSend(certArray, uploadName, cfg)
 					if err != nil {
-						fmt.Println(err)
-						// Need to ask the user if the created file shall be saved for later
-						os.Exit(1)
+						log.Fatal(err)
 					}
 					log.Infof("reBop file [%s] successfully sent", uploadName)
 				}
@@ -137,8 +131,7 @@ func main() {
 				}
 				err := getCertificatefromACME((c.Args()[0]), cfg)
 				if err != nil {
-					fmt.Println(err)
-					os.Exit(1)
+					log.Fatal(err)
 				}
 				return nil
 			},
@@ -147,7 +140,6 @@ func main() {
 
 	err := app.Run(os.Args)
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		log.Fatal(err)
 	}
 }

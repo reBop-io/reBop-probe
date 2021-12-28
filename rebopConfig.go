@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/gob"
-	"fmt"
 	"log"
 	"os"
 	"path"
@@ -32,8 +31,7 @@ func getConfigFileName() string {
 }
 
 func processError(err error) {
-	fmt.Println(err)
-	os.Exit(2)
+	log.Fatal(err)
 }
 
 func getrebopConfig(cfg *Config) {

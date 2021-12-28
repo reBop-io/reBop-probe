@@ -5,7 +5,6 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -129,8 +128,7 @@ func getCertificatefromACME(storepath string, cfg Config) error {
 
 	lengh, certArray, err := rebopScan(absolutePath)
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		log.Fatal(err)
 	}
 	if lengh > 0 {
 		//err = rebopSend(certArray, rebopRandomString(5), cfg)

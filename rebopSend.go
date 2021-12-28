@@ -54,16 +54,18 @@ func rebopSend(certArray []byte, filename string, config Config) error {
 	}
 	req.Header.Set("Content-Type", multiPartWriter.FormDataContentType())
 	req.Header.Set("Authorization", "Api-Key "+config.User.ReBopAPIKey)
-	//fmt.Print(req)
 	log.Infof("Connecting to %s with API-Key", req.Host)
 	client := &http.Client{}
 	response, err := client.Do(req)
 	if err != nil {
 		return err
 	}
-	log.Infof("%s responded with %d status code", req.Host, response.StatusCode)
+	
 	if response.StatusCode != 200 {
 		return errors.New("Can't connect to rebop Server: " + response.Status)
+	} else {
+		log.Infof("%s responded OK", req.Host)
+		return nil
 	}
-	return nil
+	
 }
