@@ -32,4 +32,4 @@ The best way to better explore all the features of the **reBop probe** is to rea
 
 ## ⚠️ License
 
-`reBop-probe` is free and open-source software licensed under the [Apache 2.0 License](https://github.com/reBop-io/reBop-probe/master/LICENSE).
+`reBop-probe` is free and open-source software licensed under the [Apache 2.0 License](https://github.com/reBop-io/reBop-probe/blob/master/LICENSE).
