@@ -13,16 +13,15 @@ import (
 
 // Config
 type Config struct {
-	User struct {
-		ReBopAPIKey string `yaml:"rebopapikey", envconfig:"ReBopAPIKey"`
-	} `yaml:"user"`
 	Rebopserver struct {
-		Host  string `yaml:"host"`
-		Port  string `yaml:"port"`
-		Proto string `yaml:"proto"`
+		Host        string `yaml:"host"`
+		Port        string `yaml:"port"`
+		Proto       string `yaml:"proto"`
+		Rebopapikey string `yaml:"rebopapikey", envconfig:"ReBopAPIKey"`
 	} `yaml:"rebopserver"`
 	Acme struct {
 		Cadirurl  string `yaml:"cadirurl"`
+		Solver    string `yaml:"solver"`
 		Useremail string `yaml:"useremail"`
 		Hostname  string `yaml:"hostname"`
 	} `yaml:"acme"`
@@ -43,6 +42,7 @@ var validCount = 0
 var knownCount = 0
 var errorCount = 0
 var mutex sync.RWMutex
+
 // var mutex2 sync.RWMutex
 var hashtable = make(map[[32]byte][32]byte)
 var app = cli.NewApp()
@@ -53,12 +53,12 @@ func main() {
 
 	// Get local db
 	if err := loadLocalDB(cfg.Probe.Filedb, &hashtable); err != nil {
-		// log.Fatalln(err)
+		log.Infof("No local database found, creating %s", cfg.Probe.Filedb)
 	}
 	defer saveLocaDB(cfg.Probe.Filedb, hashtable)
 
 	app.Name = "reBop-probe"
-	app.Version = "0.4.0"
+	app.Version = "0.5.0"
 	// Possible command for rebop-probe are
 	// scan : scans localhost for certificate
 	// scansend : scans and sends localhost reBop file to remote reBop server
@@ -107,7 +107,7 @@ func main() {
 				}
 				if lengh > 0 {
 					//err = rebopSend(certArray, rebopRandomString(5), cfg)
-					uploadName := "reBop-"+wordGenerator.GetWord(5)+".json"
+					uploadName := "reBop-" + wordGenerator.GetWord(5) + ".json"
 					err = rebopSend(certArray, uploadName, cfg)
 					if err != nil {
 						log.Fatal(err)

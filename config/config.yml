@@ -1,18 +1,16 @@
 # reBop probe configuration
 
-# reBop User configuration
-user:
-  rebopapikey: ""
-
 # reBop server
 rebopserver:
   proto: "https"
   host: "api.rebop.io"
   port: "443"
+  rebopapikey: ""
 
 # ACME Certificate Authority Configuration
 acme:
-  cadirurl: ""
+  cadirurl: "" # CA Directory URL, for let's encrypt : https://acme-v02.api.letsencrypt.org/directory
+  solver: "http01" # Can also be "tlsalpn01" or "http01+tlsalpn01"
   useremail: ""
   hostname: ""
 

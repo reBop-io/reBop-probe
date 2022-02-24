@@ -75,19 +75,33 @@ func getCertificatefromACME(storepath string, cfg Config) error {
 		log.Fatal(err)
 	}
 
-	// We specify an http port of 5002 and an tls port of 5001 on all interfaces
-	// because we aren't running as root and can't bind a listener to port 80 and 443
-	// (used later when we attempt to pass challenges). Keep in mind that you still
-	// need to proxy challenge traffic to port 5002 and 5001.
-	// err = client.Challenge.SetHTTP01Provider(http01.NewProviderServer("", "5002"))
-	err = client.Challenge.SetHTTP01Provider(http01.NewProviderServer("", "80"))
-	if err != nil {
-		log.Fatal(err)
-	}
-	// err = client.Challenge.SetTLSALPN01Provider(tlsalpn01.NewProviderServer("", "5001"))
-	err = client.Challenge.SetTLSALPN01Provider(tlsalpn01.NewProviderServer("", "443"))
-	if err != nil {
-		log.Fatal(err)
+	switch cfg.Acme.Solver {
+	case "http01":
+		// We specify an http port of 5002 and an tls port of 5001 on all interfaces
+		// because we aren't running as root and can't bind a listener to port 80 and 443
+		// (used later when we attempt to pass challenges). Keep in mind that you still
+		// need to proxy challenge traffic to port 5002 and 5001.
+		// err = client.Challenge.SetHTTP01Provider(http01.NewProviderServer("", "5002"))
+		err = client.Challenge.SetHTTP01Provider(http01.NewProviderServer("", "80"))
+		if err != nil {
+			log.Fatal(err)
+		}
+	case "tlsalpn01":
+		err = client.Challenge.SetTLSALPN01Provider(tlsalpn01.NewProviderServer("", "443"))
+		if err != nil {
+			log.Fatal(err)
+		}
+	case "http01+tlsalpn01":
+		err = client.Challenge.SetHTTP01Provider(http01.NewProviderServer("", "80"))
+		if err != nil {
+			log.Fatal(err)
+		}
+		err = client.Challenge.SetTLSALPN01Provider(tlsalpn01.NewProviderServer("", "443"))
+		if err != nil {
+			log.Fatal(err)
+		}
+	default:
+		log.Fatal("No acme solver found in config file")
 	}
 
 	// New users will need to register
@@ -125,14 +139,13 @@ func getCertificatefromACME(storepath string, cfg Config) error {
 		panic(err3)
 	}
 
-
 	lengh, certArray, err := rebopScan(absolutePath)
 	if err != nil {
 		log.Fatal(err)
 	}
 	if lengh > 0 {
 		//err = rebopSend(certArray, rebopRandomString(5), cfg)
-		uploadName := "reBop-"+hostname+wordGenerator.GetWord(5)+".json"
+		uploadName := "reBop-" + hostname + wordGenerator.GetWord(5) + ".json"
 		err = rebopSend(certArray, uploadName, cfg)
 		if err != nil {
 			log.Fatal(err)
