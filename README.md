@@ -1,5 +1,5 @@
 <h1 align="center">
-  <img src="https://s3.eu-west-3.amazonaws.com/static.rebop.io/img/rebop.png" width="224px"alt="reBop logo" title="reBop" /><br/><br />
+  <img src="https://static.rebop.io/img/rebop.png" width="224px"alt="reBop logo" title="reBop" /><br/><br />
 reBop probe
 </h1>
 <p align="center">reBop probe scans local filesystem for digital certificates. It creates a reBop file to import to <a href="https://www.rebop.io">reBop</a>.
