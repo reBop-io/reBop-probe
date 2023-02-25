@@ -15,7 +15,7 @@ It also gets and renew digital certificate from any ACME PKI and sends it to reB
 
 ## ⚡️ Building the probe
 
-First of all, [download](https://golang.org/dl/) and install **Go**. Version `1.17` or higher is required.
+First of all, [download](https://golang.org/dl/) and install **Go**. Version `1.20` or higher is required.
 
 Installation is done by downloading the source code and builing it:
 
