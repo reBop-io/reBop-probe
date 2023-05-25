@@ -1,6 +1,6 @@
 module github.com/rebop-io/reBop-probe
 
-go 1.19
+go 1.20
 
 require (
 	github.com/go-acme/lego/v3 v3.9.0
