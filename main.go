@@ -58,12 +58,12 @@ func main() {
 	defer saveLocaDB(cfg.Probe.Filedb, hashtable)
 
 	app.Name = "reBop-probe"
-	app.Version = "0.5.0"
+	app.Version = "0.6.0"
 	// Possible command for rebop-probe are
 	// scan : scans localhost for certificate
 	// scansend : scans and sends localhost reBop file to remote reBop server
 	// acme-cert : get new or renew certificate with ACME PKI (letsencrypt or other)
-	app.Usage = "Scan local filesystem for certificates and send them to reBop.\n\t\tGet and renew certificate from an ACME PKI (Let's Encrypt or others)"
+	app.Usage = "Scan local filesystem for certificates and send them to reBop.\n\t\tGet and renew certificate from an ACME PKI (Let's Encrypt or other)\n\t\tCheck the documentation at https://docs.rebop.io"
 	app.Commands = []cli.Command{
 		{
 			Name: "scan",
