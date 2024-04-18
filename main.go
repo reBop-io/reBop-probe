@@ -58,7 +58,7 @@ func main() {
 	defer saveLocaDB(cfg.Probe.Filedb, hashtable)
 
 	app.Name = "reBop-probe"
-	app.Version = "0.6.0"
+	app.Version = "0.7.0"
 	// Possible command for rebop-probe are
 	// scan : scans localhost for certificate
 	// scansend : scans and sends localhost reBop file to remote reBop server
@@ -127,7 +127,7 @@ func main() {
 			},
 			Action: func(c *cli.Context) error {
 				if c.NArg() < 1 {
-					return errors.New("usage: renew <path>")
+					return errors.New("usage: acme-cert -p <path>")
 				}
 				err := getCertificatefromACME((c.Args()[0]), cfg)
 				if err != nil {
