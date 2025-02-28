@@ -21,6 +21,7 @@ Installation is done by downloading the source code and builing it:
 
 ```bash
 git clone https://github.com/reBop-io/reBop-probe.git
+go get
 go build
 ```
 
