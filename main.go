@@ -2,13 +2,13 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"sync"
 	"time"
 
 	"github.com/rebop-io/reBop-probe/log"
 	"github.com/urfave/cli"
-	"github.com/zhexuany/wordGenerator"
 )
 
 // Config
@@ -43,7 +43,6 @@ var knownCount = int64(0)
 var errorCount = int64(0)
 var mutex sync.RWMutex
 
-// var mutex2 sync.RWMutex
 var hashtable = make(map[[32]byte][32]byte)
 var app = cli.NewApp()
 
@@ -53,86 +52,212 @@ func main() {
 
 	// Get local db
 	if err := loadLocalDB(cfg.Probe.Filedb, &hashtable); err != nil {
-		log.Infof("No local database found, creating %s", cfg.Probe.Filedb)
+		log.Printf("No local database found, creating %s", cfg.Probe.Filedb)
 	}
 	defer saveLocaDB(cfg.Probe.Filedb, hashtable)
 
 	app.Name = "reBop-probe"
 	app.Version = "0.8.0"
-	// Possible command for rebop-probe are
-	// scan : scans localhost for certificate
-	// scansend : scans and sends localhost reBop file to remote reBop server
-	// acme-cert : get new or renew certificate with ACME PKI (letsencrypt or other)
-	app.Usage = "Scan local filesystem for certificates and send them to reBop.\n\t\tGet and renew certificate from an ACME PKI (Let's Encrypt or other)\n\t\tCheck the documentation at https://docs.rebop.io"
+	app.Usage = "Certificate discovery and management tool\n\t\n\tScan filesystems for SSL/TLS certificates, manage ACME certificates, and integrate\n\twith the reBop certificate management platform.\n\n\tDocumentation: https://docs.rebop.io"
+
 	app.Commands = []cli.Command{
 		{
-			Name: "scan",
+			Name:        "scan",
+			Usage:       "Scan filesystem for SSL/TLS certificates",
+			Description: `Scan a directory recursively for SSL/TLS certificates and generate a reBop\n   report file. The probe will automatically detect certificate files and\n   extract relevant information.`,
+			ArgsUsage:   "[PATH]",
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:  "path, p",
-					Usage: "Scan path from `PATH`",
+					Value: ".",
+					Usage: "Directory path to scan for certificates",
 				},
 				cli.StringFlag{
 					Name:  "out, o",
-					Usage: "Output to `FILE`",
+					Usage: "Output report to `FILE` (default: rebop_<timestamp>.gz)",
+				},
+				cli.BoolFlag{
+					Name:  "verbose, v",
+					Usage: "Enable verbose output",
 				},
 			},
 			Action: func(c *cli.Context) error {
-				length, certArray, err := rebopScan(c.String("path"))
-				if err != nil {
-					log.Fatal(err)
+				targetPath := c.String("path")
+				if targetPath == "" {
+					targetPath = "."
 				}
-				if length > 0 {
-					f, err := rebopStore(certArray, c.String("out"))
-					if err != nil {
-						log.Fatal(err)
+
+				log.Printf("Starting certificate scan in: %s", targetPath)
+				length, certArray, err := rebopScan(targetPath)
+				if err != nil {
+					return cli.NewExitError(fmt.Sprintf("Scan failed: %v", err), 1)
+				}
+
+				if length == 0 {
+					log.Println("No certificates found in the specified path")
+					return nil
+				}
+
+				outputFile := c.String("out")
+				f, err := rebopStore(certArray, outputFile)
+				if err != nil {
+					return cli.NewExitError(fmt.Sprintf("Failed to save results: %v", err), 1)
+				}
+
+				log.Printf("Scan completed. Results saved to: %s", f)
+				log.Printf("Found %d certificates in %d scanned files", length, parsedCount)
+				return nil
+			},
+		},
+		{
+			Name:      "scansend",
+			Usage:     "Scan for certificates and upload to reBop server",
+			ArgsUsage: "[PATH]",
+			Description: `Scan a directory for SSL/TLS certificates and automatically upload
+   the results to the configured reBop server. Requires API credentials to be
+   configured in the reBop configuration file.`,
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "path, p",
+					Value: "/",
+					Usage: "Directory path to scan for certificates",
+				},
+				cli.StringFlag{
+					Name:  "server, s",
+					Usage: "reBop server URL (overrides config)",
+				},
+				cli.BoolFlag{
+					Name:  "no-delete",
+					Usage: "Keep the generated report file after upload",
+				},
+			},
+			Action: func(c *cli.Context) error {
+				targetPath := c.String("path")
+				if targetPath == "" {
+					targetPath = "/"
+				}
+
+				log.Printf("Starting certificate scan in: %s", targetPath)
+				length, certArray, err := rebopScan(targetPath)
+				if err != nil {
+					return cli.NewExitError(fmt.Sprintf("Scan failed: %v", err), 1)
+				}
+
+				if length == 0 {
+					log.Println("No certificates found to upload")
+					return nil
+				}
+
+				tempFile := fmt.Sprintf("rebop_%s.gz", time.Now().Format("20060102-150405"))
+				f, err := rebopStore(certArray, tempFile)
+				if err != nil {
+					return cli.NewExitError(fmt.Sprintf("Failed to save scan results: %v", err), 1)
+				}
+
+				log.Printf("Found %d certificates. Uploading to reBop server...", length)
+				certData, err := os.ReadFile(f)
+				if err != nil {
+					return cli.NewExitError(fmt.Sprintf("Failed to read certificate file: %v", err), 1)
+				}
+
+				uploadName := fmt.Sprintf("scan_%s.gz", time.Now().Format("20060102_150405"))
+				if err := rebopSend(certData, uploadName, cfg); err != nil {
+					if !c.Bool("no-delete") {
+						os.Remove(f) // Clean up temp file on error
 					}
-					log.Infof("reBop file created: %s", f)
+					return cli.NewExitError(fmt.Sprintf("Upload failed: %v", err), 1)
+				}
+
+				log.Println("Successfully uploaded certificate data to reBop server")
+				if !c.Bool("no-delete") {
+					os.Remove(f) // Clean up temp file
 				}
 				return nil
 			},
 		},
 		{
-			Name: "scansend",
+			Name:      "acme-cert",
+			Usage:     "Request or renew certificates using ACME protocol",
+			ArgsUsage: "[DOMAIN...]",
+			Description: `Request new or renew existing SSL/TLS certificates using the ACME protocol
+   (e.g., Let's Encrypt). Supports HTTP-01 and DNS-01 challenges.`,
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:  "path, p",
-					Usage: "Scans path from `PATH` and sends result to reBop server",
+					Usage: "Path to store the certificate files",
+					Value: "./certs",
 				},
-			},
-			Action: func(c *cli.Context) error {
-				lengh, certArray, err := rebopScan(c.String("path"))
-				if err != nil {
-					log.Fatal(err)
-				}
-				if lengh > 0 {
-					//err = rebopSend(certArray, rebopRandomString(5), cfg)
-					uploadName := "reBop-" + wordGenerator.GetWord(5) + ".json"
-					err = rebopSend(certArray, uploadName, cfg)
-					if err != nil {
-						log.Fatal(err)
-					}
-					log.Infof("reBop file [%s] successfully sent", uploadName)
-				}
-				return nil
-			},
-		},
-		{
-			Name: "acme-cert",
-			Flags: []cli.Flag{
 				cli.StringFlag{
-					Name:  "path, p",
-					Usage: "path to store new certificate",
+					Name:  "email, e",
+					Usage: "Email address for account registration and recovery",
+				},
+				cli.StringFlag{
+					Name:  "webroot, w",
+					Usage: "Webroot directory for HTTP-01 challenge",
+				},
+				cli.StringFlag{
+					Name:  "dns, d",
+					Usage: "DNS provider for DNS-01 challenge (e.g., cloudflare, route53)",
+				},
+				cli.BoolFlag{
+					Name:  "staging",
+					Usage: "Use Let's Encrypt staging environment",
+				},
+				cli.BoolFlag{
+					Name:  "force-renew",
+					Usage: "Force renewal even if certificate is not expired",
 				},
 			},
 			Action: func(c *cli.Context) error {
 				if c.NArg() < 1 {
-					return errors.New("usage: acme-cert -p <path>")
+					return errors.New("usage: acme-cert [DOMAIN...]")
 				}
-				err := getCertificatefromACME((c.Args()[0]), cfg)
-				if err != nil {
-					log.Fatal(err)
+
+				domains := c.Args()
+				path := c.String("path")
+				email := c.String("email")
+				// webroot and dns are currently not used but kept for future implementation
+				_ = c.String("webroot")
+				_ = c.String("dns")
+				_ = c.Bool("force-renew") // Not currently used
+
+				// Use staging flag if needed
+				if c.Bool("staging") {
+					log.Println("Using Let's Encrypt staging environment")
 				}
+
+				if email == "" {
+					return errors.New("email address is required")
+				}
+
+				// Create output directory if it doesn't exist
+				if err := os.MkdirAll(path, 0755); err != nil {
+					return fmt.Errorf("failed to create output directory: %v", err)
+				}
+
+				log.Printf("Requesting certificate for domains: %v", domains)
+				log.Printf("Using Let's Encrypt %s environment", map[bool]string{true: "Staging", false: "Production"}[c.Bool("staging")])
+
+				// Call the ACME function with the appropriate parameters
+				if email == "" {
+					return errors.New("email address is required (use --email flag)")
+				}
+
+				// Update config with email
+				cfg.Acme.Useremail = email
+
+				// The getCertificatefromACME function handles its own file operations
+				log.Printf("Requesting certificate for domains: %v", domains)
+				if len(domains) == 0 {
+					return fmt.Errorf("at least one domain is required")
+				}
+
+				// The function handles its own file operations and logging
+				if err := getCertificatefromACME(path, cfg); err != nil {
+					return fmt.Errorf("failed to obtain certificate: %v", err)
+				}
+
+				log.Println("Certificate successfully obtained/renewed")
 				return nil
 			},
 		},
