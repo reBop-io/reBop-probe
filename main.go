@@ -32,7 +32,7 @@ type Config struct {
 
 var debug = false
 
-var ext = []string{".cer", ".cert", ".pem", ".der", ".crt"}
+var ext = []string{".cer", ".cert", ".pem", ".der", ".crt", ".p12", ".pkcs12", ".jks"}
 
 var hostname = gethostname()
 var ipaddress = getipaddress()

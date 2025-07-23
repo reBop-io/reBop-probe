@@ -5,7 +5,6 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -125,9 +124,9 @@ func getCertificatefromACME(storepath string, cfg Config) error {
 	//fmt.Printf("%#v\n", certificates)
 	//fmt.Print(certificates.Certificate)
 	absolutePath, _ := filepath.Abs(storepath)
-	err1 := ioutil.WriteFile(absolutePath+"/privatekey.pem", certificates.PrivateKey, 0644)
-	err2 := ioutil.WriteFile(absolutePath+"/certificate.pem", certificates.Certificate, 0644)
-	err3 := ioutil.WriteFile(absolutePath+"/issuer.pem", certificates.IssuerCertificate, 0644)
+	err1 := os.WriteFile(absolutePath+"/privatekey.pem", certificates.PrivateKey, 0644)
+	err2 := os.WriteFile(absolutePath+"/certificate.pem", certificates.Certificate, 0644)
+	err3 := os.WriteFile(absolutePath+"/issuer.pem", certificates.IssuerCertificate, 0644)
 
 	if err1 != nil {
 		panic(err1)
