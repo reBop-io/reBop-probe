@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -132,7 +131,7 @@ func parseEntry(entry fsEntry) (*rebopCertificate, error) {
 		parsedCount++
 		mutex.Unlock()
 
-		dat, err := ioutil.ReadFile(entry.path)
+		dat, err := os.ReadFile(entry.path)
 		if err != nil {
 			return nil, err
 		}
