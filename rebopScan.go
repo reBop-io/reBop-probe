@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"crypto/sha256"
 	"crypto/x509"
 	"encoding/base64"
@@ -10,8 +11,10 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	ks "github.com/pavlo-v-chernykh/keystore-go/v4"
@@ -39,88 +42,218 @@ type fsEntry struct {
 }
 
 func rebopScan(rootPath string) (int, []byte, error) {
+	log.Infof("Starting scan of: %s", rootPath)
+	// 1. Add context for cancellation
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// 2. Check if path exists
 	if _, err := os.Stat(rootPath); os.IsNotExist(err) {
-		//fmt.Printf("Couldn't open %s", rootPath)
-		return 0, nil, err
+		return 0, nil, fmt.Errorf("path does not exist: %s", rootPath)
 	}
-	var wg sync.WaitGroup
 
-	paths := make(chan fsEntry, 1)
-	errs := make(chan error, 1)
-	certs := make(chan *rebopCertificate, 1)
-	done := make(chan bool, 1)
+	// 3. Configure concurrency
+	numWorkers := runtime.NumCPU()
+	paths := make(chan fsEntry, numWorkers*10) // Buffer based on worker count
+	errs := make(chan error, numWorkers*10)    // Buffer error channel
+	certs := make(chan *rebopCertificate, numWorkers*10)
+	done := make(chan struct{})
 
-	wg.Add(1)
-	go parseHostForCertFiles(rootPath, paths, errs, &wg)
-	go certWorker(paths, errs, certs, &wg)
+	// Create separate WaitGroups for file walker and workers
+	var fileWalkerWg, workerWg sync.WaitGroup
+
+	// 4. Start file walker
+	fileWalkerWg.Add(1)
 	go func() {
-		wg.Wait()
-		done <- true
+		defer fileWalkerWg.Done()
+		if err := filepath.Walk(rootPath, func(path string, f os.FileInfo, err error) error {
+			if err != nil {
+				select {
+				case errs <- err:
+				case <-ctx.Done():
+					return ctx.Err()
+				}
+				return nil
+			}
+
+			// Early filtering by extension
+			extension := filepath.Ext(path)
+			if !stringInSlice(extension, ext) {
+				return nil
+			}
+
+			if !f.IsDir() {
+				select {
+				case paths <- fsEntry{path: path, f: f}:
+				case <-ctx.Done():
+					return ctx.Err()
+				}
+			}
+			return nil
+		}); err != nil {
+			select {
+			case errs <- err:
+			case <-ctx.Done():
+			}
+		}
 	}()
 
-	rebopCertificates := make(rebopCertificates, 0)
+	// 5. Start worker pool
+	for i := 0; i < numWorkers; i++ {
+		workerWg.Add(1)
+		go func() {
+			certWorker(ctx, paths, errs, certs, &workerWg)
+		}()
+	}
 
-	log.Infof("%s %s started - scanning %s", app.Name, app.Version, rootPath)
+	// 6. Close paths channel when the file walker is done
+	go func() {
+		fileWalkerWg.Wait()
+		close(paths) // Close paths to signal workers that no more entries are coming
+	}()
+
+	// 7. Close certs and done when all workers are finished
+	go func() {
+		workerWg.Wait()
+		close(certs)
+		close(done)
+	}()
+
+	// 7. Process results with progress reporting
+	var (
+		rebopCerts rebopCertificates
+		lastUpdate = time.Now()
+		updateFreq = 100 * time.Millisecond
+	)
+
+	// Track if we've seen the done signal
+	var doneReceived bool
 
 	for {
 		select {
-		case <-done:
-			mutex.Lock()
-			certificateJSON, err := json.Marshal(rebopCertificates)
-			lengh := len(rebopCertificates)
-			if err != nil {
-				return 0, nil, err
+		case <-ctx.Done():
+			return 0, nil, ctx.Err()
+
+		case cert, ok := <-certs:
+			if !ok {
+				certs = nil
+				// If we've already received the done signal, we can exit now
+				if doneReceived {
+					break
+				}
+				continue
 			}
-			mutex.Unlock()
-			fmt.Printf("\r")
-			log.Infof("reBop scan Completed in : %s", time.Since(start))
-			log.Infof("Parsed: %d files", parsedCount)
-			log.Infof("Found: %d new files with certificate, %d known files and %d files without certificate", validCount, knownCount, errorCount)
-			return lengh, certificateJSON, nil
-		case cert := <-certs:
-			rebopCertificates = append(rebopCertificates, *cert)
+			rebopCerts = append(rebopCerts, *cert)
+
 		case err := <-errs:
-			if debug {
-				fmt.Println("error: ", err)
+			if debug && err != nil {
+				log.Infof("Error processing file: %v", err)
 			}
-		default:
-			fmt.Printf("\rParsed %d files", parsedCount)
+
+		case <-time.After(updateFreq):
+			if time.Since(lastUpdate) > time.Second {
+				fmt.Fprintf(os.Stderr, "\rParsed %d files, found %d certificates",
+					atomic.LoadInt64(&parsedCount),
+					len(rebopCerts),
+				)
+				lastUpdate = time.Now()
+			}
+
+		case <-done:
+			doneReceived = true
+			// If certs is already closed, we can proceed to marshal and return
+			if certs == nil {
+				certJSON, err := json.Marshal(rebopCerts)
+				if err != nil {
+					return 0, nil, fmt.Errorf("error marshaling certificates: %w", err)
+				}
+
+				log.Infof("reBop scan completed in %s", time.Since(start))
+				log.Infof("Parsed: %d files", parsedCount)
+				log.Infof("Found: %d new certificates, %d known files, %d errors",
+					validCount, knownCount, errorCount)
+
+				return len(rebopCerts), certJSON, nil
+			}
+		}
+
+		// Exit condition: both certs channel is closed and we've received done signal
+		if certs == nil && doneReceived {
+			certJSON, err := json.Marshal(rebopCerts)
+			if err != nil {
+				return 0, nil, fmt.Errorf("error marshaling certificates: %w", err)
+			}
+
+			log.Infof("reBop scan completed in %s", time.Since(start))
+			log.Infof("Parsed: %d files", parsedCount)
+			log.Infof("Found: %d new certificates, %d known files, %d errors",
+				validCount, knownCount, errorCount)
+
+			return len(rebopCerts), certJSON, nil
 		}
 	}
+
+	return 0, nil, nil
 }
 
-func parseHostForCertFiles(pathS string, paths chan fsEntry, errs chan error, wg *sync.WaitGroup) {
+func parseHostForCertFiles(pathS string, paths chan<- fsEntry, errs chan<- error, wg *sync.WaitGroup) {
 	defer wg.Done()
 	filepath.Walk(pathS, func(path string, f os.FileInfo, err error) error {
 		if err != nil {
-			errs <- err
+			select {
+			case errs <- err:
+			case <-context.Background().Done():
+				return context.Canceled
+			}
 			return nil
 		}
 		if !f.IsDir() {
-			absolutePath, _ := filepath.Abs(path)
-			paths <- fsEntry{path: absolutePath, f: f}
+			absolutePath, absErr := filepath.Abs(path)
+			if absErr != nil {
+				select {
+				case errs <- fmt.Errorf("error getting absolute path for %s: %w", path, absErr):
+				case <-context.Background().Done():
+					return context.Canceled
+				}
+				return nil
+			}
+			select {
+			case paths <- fsEntry{path: absolutePath, f: f}:
+			case <-context.Background().Done():
+				return context.Canceled
+			}
 		}
 		return nil
 	})
 }
 
-func certWorker(entries chan fsEntry, errs chan error, certs chan *rebopCertificate, wg *sync.WaitGroup) {
-	for entry := range entries {
-		wg.Add(1)
-		// too fast, need to save entry value before executing go routine
-		entryCopy := entry
-		go func() {
-			defer wg.Done()
-			// FIXME: use a limited pool
-			cert, err := parseEntry(entryCopy)
-			if err != nil {
-				errs <- err
+func certWorker(ctx context.Context, entries <-chan fsEntry, errs chan<- error, certs chan<- *rebopCertificate, wg *sync.WaitGroup) {
+	defer wg.Done()
+	for {
+		select {
+		case entry, ok := <-entries:
+			if !ok {
 				return
 			}
-			if cert != nil {
-				certs <- cert
+			cert, err := parseEntry(entry)
+			if err != nil {
+				select {
+				case errs <- fmt.Errorf("error parsing %s: %w", entry.path, err):
+				case <-ctx.Done():
+					return
+				}
+				continue
 			}
-		}()
+			if cert != nil {
+				select {
+				case certs <- cert:
+				case <-ctx.Done():
+					return
+				}
+			}
+		case <-ctx.Done():
+			return
+		}
 	}
 }
 
@@ -133,7 +266,7 @@ func parseEntry(entry fsEntry) (*rebopCertificate, error) {
 	}
 
 	mutex.Lock()
-	parsedCount++
+	atomic.AddInt64(&parsedCount, 1)
 	mutex.Unlock()
 
 	dat, err := os.ReadFile(entry.path)

@@ -37,10 +37,10 @@ var ext = []string{".cer", ".cert", ".pem", ".der", ".crt", ".p12", ".pkcs12", "
 var hostname = gethostname()
 var ipaddress = getipaddress()
 var start = time.Now()
-var parsedCount = 0
-var validCount = 0
-var knownCount = 0
-var errorCount = 0
+var parsedCount = int64(0)
+var validCount = int64(0)
+var knownCount = int64(0)
+var errorCount = int64(0)
 var mutex sync.RWMutex
 
 // var mutex2 sync.RWMutex
