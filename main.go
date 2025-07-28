@@ -57,8 +57,8 @@ func main() {
 	defer saveLocaDB(cfg.Probe.Filedb, hashtable)
 
 	app.Name = "reBop-probe"
-	app.Version = "0.8.0"
-	app.Usage = "Certificate discovery and management tool\n\t\n\tScan filesystems for SSL/TLS certificates, manage ACME certificates, and integrate\n\twith the reBop certificate management platform.\n\n\tDocumentation: https://docs.rebop.io"
+	app.Version = "1.0.1"
+	app.Usage = "Certificate discovery and management tool\n\t\n\tScan filesystem for SSL/TLS certificates, manage ACME certificates, and integrate\n\twith the reBop certificate management platform.\n\n\tDocumentation: https://docs.rebop.io"
 
 	app.Commands = []cli.Command{
 		{
